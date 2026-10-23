@@ -100,8 +100,8 @@ function App() {
   async function saveSettings(e) {
     e.preventDefault();
     if (!roomId || room?.status !== 'setup') return;
-    const budgets = Object.fromEntries(teams.map(t => [t.id, Number(budgetInputs[t.id])]));
-    if (Object.values(budgets).some(v => !Number.isFinite(v) || v < 0 || v > 500)) { setError('팀 예산은 0~500P 사이로 입력해 주세요.'); return; }
+    const budgets = teams.map(t => ({ team_id: t.id, budget: Number(budgetInputs[t.id]) }));
+    if (budgets.some(item => !Number.isFinite(item.budget) || item.budget < 0 || item.budget > 500)) { setError('팀 예산은 0~500P 사이로 입력해 주세요.'); return; }
     if (Object.values(gradePrices).some(v => !Number.isFinite(Number(v)) || Number(v) < 1 || Number(v) > 100)) { setError('등급별 시작가는 1~100P 사이로 입력해 주세요.'); return; }
     await action('update_auction_balance_settings', { p_room_id: roomId, p_team_budgets: budgets, p_grade_prices: Object.fromEntries(Object.entries(gradePrices).map(([k,v]) => [k, Number(v)])) });
   }
