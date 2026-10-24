@@ -49,12 +49,12 @@ export default function SpectatorEvents({ supabase, roomId, teams, players, sess
     return () => { supabase.removeChannel(channel); };
   }, [supabase, roomId, loadEvents]);
 
-  const callRpc = async (id, fn, args) => {
+  const callRpc = async (id, fn, args, successText) => {
     setBusyId(id); setError(''); setNotice('');
     try {
       const { data, error: rpcError } = await supabase.rpc(fn, args);
       if (rpcError) throw rpcError;
-      setNotice(typeof data === 'string' ? data : '처리가 완료되었습니다.');
+      setNotice(successText || (typeof data === 'string' ? data : '처리가 완료되었습니다.'));
       await loadEvents();
       if (onRefresh) await onRefresh();
     } catch (e) { setError(e.message || '요청 처리에 실패했습니다.'); }
@@ -66,7 +66,7 @@ export default function SpectatorEvents({ supabase, roomId, teams, players, sess
     if (!title.trim() || !startsAt) return;
     await callRpc('create', 'create_spectator_event', {
       p_room_id: roomId, p_title: title.trim(), p_starts_at: new Date(startsAt).toISOString()
-    });
+    }, '관전자 이벤트를 만들었습니다.');
     setTitle('백야 롤 내전 관전자 예측');
     setStartsAt(localDateTimeInput(new Date(Date.now() + 30 * 60000)));
   };
