@@ -12,6 +12,7 @@ const PRICE = { S: 8, A: 6, B: 4, C: 3, D: 1 };
 
 function App() {
   const [session, setSession] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [room, setRoom] = useState(null);
   const [rooms, setRooms] = useState([]);
@@ -59,10 +60,40 @@ function App() {
   }
 
   useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getSession().then(({data}) => setSession(data.session));
-    const {data:{subscription}} = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
-    return () => subscription.unsubscribe();
+    if (!supabase) {
+      setAuthLoading(false);
+      return;
+    }
+
+    let active = true;
+    // Subscribe before reading the existing session so an OAuth callback/session
+    // refresh cannot be missed while the initial session is being restored.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!active) return;
+      setSession(nextSession);
+      if (event === 'INITIAL_SESSION' || nextSession) setAuthLoading(false);
+    });
+
+    supabase.auth.getSession()
+      .then(({ data, error: sessionError }) => {
+        if (!active) return;
+        if (sessionError) setError('로그인 세션을 확인하지 못했습니다. 다시 로그인해 주세요.');
+        setSession(data?.session ?? null);
+      })
+      .catch(() => {
+        if (active) {
+          setSession(null);
+          setError('로그인 세션을 복구하지 못했습니다. 다시 로그인해 주세요.');
+        }
+      })
+      .finally(() => {
+        if (active) setAuthLoading(false);
+      });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
   useEffect(() => {
     if (!session || !supabase) return;
@@ -162,6 +193,7 @@ function App() {
   }
 
   if (!supabase || !roomId) return <Setup />;
+  if (authLoading) return <main className="login"><div className="logo"><Moon size={27}/></div><p className="eyebrow">BAEKYA COMMUNITY</p><h1>BAEKYA <span>AUCTION</span></h1><p className="muted lead">로그인 상태를 확인하고 있습니다…</p></main>;
   if (!session) return <main className="login"><div className="logo"><Moon size={27}/></div><p className="eyebrow">BAEKYA COMMUNITY · LEAGUE OF LEGENDS</p><h1>BAEKYA <span>AUCTION</span></h1><p className="muted lead">팀장을 맡고, 포인트를 전략적으로 사용해<br/>우리 팀의 승리를 만들어 보세요.</p><button className="btn primary loginbtn" onClick={login}><ShieldCheck size={18}/> Discord로 로그인</button>{error && <p className="error">{error}</p>}<p className="tiny">디스코드 인증은 Supabase OAuth 설정이 완료된 뒤 작동합니다.</p></main>;
 
   return <div className="app"><header><div className="brand"><div className="moon"><Moon size={22}/></div><div><h1>BAEKYA <span>AUCTION</span></h1><p>{room?.name || '백야 경매방'} · PLAYER DRAFT SYSTEM</p></div></div><div className="head-actions"><span className="pill">{profile?.discord_username || session.user.user_metadata?.full_name || session.user.email}</span>{isAdmin && <><label className="room-picker"><span>경매방</span><select aria-label="경매방 선택" value={roomId} onChange={e=>{setRoomId(e.target.value);setShowAdmin(false);setError('');setNotice('');}}>{rooms.map(r=><option key={r.id} value={r.id}>{r.name} · {r.status==='setup'?'준비':r.status==='running'?'진행 중':r.status==='paused'?'일시정지':'종료'}</option>)}</select></label><button className="btn ghost" onClick={()=>setShowAdmin(v=>!v)}><Settings size={16}/> 관리자</button></>}<button className="btn ghost" onClick={loadAll}><RefreshCw size={16}/></button><button className="btn ghost" onClick={logout}><LogOut size={16}/></button></div></header>
