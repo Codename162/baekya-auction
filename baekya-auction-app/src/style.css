@@ -58,3 +58,81 @@
 .member-management{grid-template-columns:1fr}
 .member-grade-control{display:flex;align-items:center;gap:6px;flex:0 0 auto}
 .member-grade-control select{min-width:76px;width:auto;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
+
+
+/* Mobile viewport and compact layout refinements */
+html{width:100%;min-width:0;overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body,#root,.app{width:100%;min-width:0;max-width:100%;overflow-x:clip}
+button,input,select{max-width:100%}
+.main{width:100%;min-width:0}
+.panel,.stat,.auction,.team,.playerrow,.nickname-editor,.spectator-event,.balance-content>*{min-width:0}
+img,svg{max-width:100%}
+@media(max-width:600px){
+  header{position:relative;padding:12px;gap:12px}
+  .brand{gap:9px;min-width:0}
+  .moon{width:38px;height:38px;flex:none}
+  .brand h1{font-size:15px;letter-spacing:.04em}
+  .brand p{font-size:9px}
+  .head-actions{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:7px}
+  .head-actions>.pill{grid-column:1/-1;max-width:100%;overflow-wrap:anywhere;white-space:normal}
+  .head-actions>.room-picker{grid-column:1/-1}
+  .head-actions>.room-picker select{width:100%;min-width:0}
+  .head-actions>.btn{min-height:40px;padding:9px 11px}
+  .main{padding:18px 10px 28px}
+  .hero{gap:12px;margin-bottom:14px}
+  .hero h2{font-size:25px;line-height:1.2;overflow-wrap:anywhere}
+  .hero p{font-size:12px;line-height:1.6}
+  .stats{gap:8px}
+  .stat{padding:11px;border-radius:13px}
+  .stat strong{font-size:20px}
+  .stat small,.stat span{font-size:10px}
+  .feature-tabs{margin-bottom:12px}
+  .feature-tab{min-height:76px;padding:9px 4px;overflow-wrap:anywhere}
+  .feature-tab span{font-size:11px;line-height:1.3}
+  .feature-tab small{font-size:9px;overflow-wrap:anywhere}
+  .columns{grid-template-columns:minmax(0,1fr);gap:10px}
+  .panel,.auction{padding:12px;border-radius:13px}
+  .panelhead{align-items:flex-start;flex-wrap:wrap;gap:8px}
+  .panelhead h3{font-size:15px}
+  .playerhead h2{font-size:19px;overflow-wrap:anywhere}
+  .price{margin:17px 0 12px}
+  .price strong{font-size:28px}
+  .buttonrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .buttonrow .btn{padding:10px 7px;font-size:12px}
+  .adminform{display:grid;grid-template-columns:minmax(0,1fr);gap:4px}
+  .adminform .field{min-width:0;width:100%}
+  .settings-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+  .settings-grid .field{min-width:0;font-size:11px}
+  .field input,.field select{font-size:16px;padding:11px 10px}
+  .room-picker select{font-size:16px}
+  .playerrow{gap:7px;padding:8px}
+  .playerrow .btn{flex:none;white-space:normal;line-height:1.25}
+  .nickname-editor{flex-wrap:wrap}
+  .nickname-editor input{flex:1 1 120px;width:100%;font-size:16px}
+  .nickname-editor .btn{flex:1 1 auto}
+  .member-grade-control{flex:1 1 auto}
+  .member-grade-control select{max-width:100%;font-size:16px}
+  .prediction-form,.spectator-admin-actions{grid-template-columns:minmax(0,1fr)}
+  .balance-content{grid-template-columns:minmax(0,1fr)}
+  .balance-player{flex-wrap:wrap}
+  .score-input{margin-left:auto}
+  .score-input input{width:68px}
+  .dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .dashboard-action{min-width:0;min-height:115px;padding:11px}
+  .dashboard-action span{overflow-wrap:anywhere}
+  .member-management{grid-template-columns:minmax(0,1fr)}
+  .event-rewards{white-space:normal}
+  .spectator-footer{align-items:flex-start;gap:8px;flex-wrap:wrap}
+}
+@media(max-width:360px){
+  .main{padding-left:8px;padding-right:8px}
+  .stats{gap:6px}
+  .stat{padding:9px}
+  .stat strong{font-size:18px}
+  .feature-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .admin-feature-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .settings-grid{grid-template-columns:minmax(0,1fr)}
+  .price{align-items:flex-start;flex-direction:column}
+  .highest{text-align:left}
+}
