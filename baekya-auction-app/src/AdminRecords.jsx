@@ -11,7 +11,7 @@ const localDateTime = (value) => {
 const emptyResult = () => ({ title: '백야 내전', event_date: dateOnly(), team_a: '', team_b: '', score_a: '0', score_b: '0', mvp: '', notes: '' });
 const emptyAnnouncement = () => ({ title: '', content: '', event_date: '', signup_deadline: '', status: 'draft' });
 
-export default function AdminRecords({ supabase, roomId, room, session, mode }) {
+export default function AdminRecords({ supabase, roomId, room, session, mode, readOnly = false }) {
   const [results, setResults] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
   const [resultForm, setResultForm] = useState(emptyResult());
@@ -123,9 +123,9 @@ export default function AdminRecords({ supabase, roomId, room, session, mode }) 
 
   const isTournament = mode === 'tournament';
   return <section className="admin-records">
-    <div className="admin-records-heading"><div className="admin-records-icon">{isTournament ? <Trophy size={22}/> : <Megaphone size={22}/>}</div><div><h3>{isTournament ? '대회 전적 관리' : '이벤트 공지 관리'}</h3><p className="tiny">관리 대상 경매방: {room?.name || '미선택'} · 관리자 전용</p></div><span className="pill">{isTournament ? results.length + '개 기록' : announcements.length + '개 공지'}</span></div>
+    <div className="admin-records-heading"><div className="admin-records-icon">{isTournament ? <Trophy size={22}/> : <Megaphone size={22}/>}</div><div><h3>{isTournament ? '대회 전적 관리' : '이벤트 공지 관리'}</h3><p className="tiny">관리 대상 경매방: {room?.name || '미선택'} · {readOnly ? '멤버 열람' : '관리자 전용'}</p></div><span className="pill">{isTournament ? results.length + '개 기록' : announcements.length + '개 공지'}</span></div>
     {isTournament ? <>
-      <form className="panel admin-record-form" onSubmit={saveResult}>
+      {!readOnly && <form className="panel admin-record-form" onSubmit={saveResult}>
         <div className="panelhead"><div><h3>{editingResult ? '전적 수정' : '전적 등록'}</h3><p className="tiny">경기 결과와 MVP를 저장하면 아래 기록에 반영됩니다.</p></div>{editingResult && <button className="btn ghost" type="button" onClick={resetResult}><X size={15}/> 취소</button>}</div>
         <div className="admin-form-grid">
           <label>대회 / 경기명<input value={resultForm.title} onChange={e=>setResultForm(v=>({...v,title:e.target.value}))} placeholder="예: 백야 롤 내전 1경기" maxLength={120}/></label>
@@ -138,9 +138,9 @@ export default function AdminRecords({ supabase, roomId, room, session, mode }) 
           <label className="admin-form-wide">비고<textarea value={resultForm.notes} onChange={e=>setResultForm(v=>({...v,notes:e.target.value}))} placeholder="세트 결과, 특이사항 등" rows="2" maxLength={1000}/></label>
         </div>
         <div className="admin-form-actions"><button className="btn primary" type="submit" disabled={saving}><Save size={16}/>{saving ? '저장 중…' : editingResult ? '수정 저장' : '전적 저장'}</button></div>
-      </form>
+      </form>}
       <div className="panel"><div className="panelhead"><h3>등록된 전적</h3><button type="button" className="btn ghost" onClick={load} disabled={loading}><CalendarDays size={15}/> 새로고침</button></div>
-        {loading ? <p className="muted">불러오는 중…</p> : results.length ? <div className="admin-record-list">{results.map(item=><article className="admin-record-card" key={item.id}><div className="admin-record-card-top"><span className="pill">{item.event_date}</span><span className="tiny">{item.title}</span></div><div className="admin-match-score"><strong>{item.team_a}</strong><b>{item.score_a} : {item.score_b}</b><strong>{item.team_b}</strong></div><p className="admin-record-winner">{item.winner === '무승부' ? '무승부' : '승리: ' + (item.winner || '미정')}{item.mvp ? ' · MVP ' + item.mvp : ''}</p>{item.notes && <p className="admin-record-notes">{item.notes}</p>}<div className="admin-form-actions"><button className="btn ghost" type="button" disabled={saving} onClick={()=>editResult(item)}><Edit3 size={15}/> 수정</button><button className="btn danger" type="button" disabled={saving} onClick={()=>deleteResult(item)}><Trash2 size={15}/> 삭제</button></div></article>)}</div> : <div className="empty">아직 전적이 없습니다. 위에서 첫 경기를 등록해 주세요.</div>}
+        {loading ? <p className="muted">불러오는 중…</p> : results.length ? <div className="admin-record-list">{results.map(item=><article className="admin-record-card" key={item.id}><div className="admin-record-card-top"><span className="pill">{item.event_date}</span><span className="tiny">{item.title}</span></div><div className="admin-match-score"><strong>{item.team_a}</strong><b>{item.score_a} : {item.score_b}</b><strong>{item.team_b}</strong></div><p className="admin-record-winner">{item.winner === '무승부' ? '무승부' : '승리: ' + (item.winner || '미정')}{item.mvp ? ' · MVP ' + item.mvp : ''}</p>{item.notes && <p className="admin-record-notes">{item.notes}</p>}{!readOnly && <div className="admin-form-actions"><button className="btn ghost" type="button" disabled={saving} onClick={()=>editResult(item)}><Edit3 size={15}/> 수정</button><button className="btn danger" type="button" disabled={saving} onClick={()=>deleteResult(item)}><Trash2 size={15}/> 삭제</button></div>}</article>)}</div> : <div className="empty">아직 전적이 없습니다.</div>}
       </div>
     </> : <>
       <form className="panel admin-record-form" onSubmit={saveAnnouncement}>
