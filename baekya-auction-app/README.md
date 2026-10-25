@@ -17,7 +17,7 @@
 ## 1. Supabase 프로젝트 만들기
 
 1. https://supabase.com 에서 프로젝트를 생성합니다.
-2. **SQL Editor**에서 `supabase/migrations/001_schema.sql` 전체를 실행합니다.
+2. **SQL Editor**에서 `supabase/migrations/001_schema.sql`부터 번호 순서대로 `002_spectator_events.sql`, `003_score_balanced_team_assignment.sql`, `004_configurable_bid_increment.sql` 등 저장소에 있는 모든 마이그레이션 파일을 실행합니다. 이미 적용한 파일은 다시 실행하지 말고, 새 파일만 번호 순서대로 적용하세요.
 3. 기본 경매 방과 3개 팀, 12명의 예시 경매 선수가 생성됩니다.
 4. 기본 방 UUID는 다음과 같습니다.
 
@@ -87,3 +87,15 @@ npm run dev
 - 팀장별 등급은 `assign_team_captain` RPC의 `p_grade` 기본값 B입니다. 필요하면 SQL에서 호출할 때 다른 등급을 넘길 수 있습니다.
 - 운영 전에 Supabase 프로젝트의 RLS, OAuth redirect, 실시간 구독, 실제 계정 3개 이상으로 동시 입찰을 테스트하세요.
 - 이 버전은 웹사이트의 기본 경매 플로우를 포함하지만, 사용자 신고/차단, 관리자 감사 로그, 자동 백업, 비밀번호 없는 Discord OAuth 외의 로그인 수단은 포함하지 않습니다.
+
+## 6. 운영 전 점검표
+
+- [ ] VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_ROOM_ID가 Vercel Production 환경에 등록되어 있는지 확인
+- [ ] Supabase Auth URL Configuration에 https://baekya-auction.vercel.app이 Site URL 및 Redirect URL로 등록되어 있는지 확인
+- [ ] Discord Developer Portal의 OAuth2 Redirect URI가 Supabase 대시보드에 표시된 callback URL과 정확히 일치하는지 확인
+- [ ] profiles 테이블에서 최초 관리자 계정의 role이 admin인지 확인
+- [ ] 일반 멤버 계정으로 관리자 전용 메뉴 및 변경 작업이 차단되는지 확인
+- [ ] 관전자 이벤트 생성 → 예측 제출 → 마감 → 결과 정산 후 포인트가 한 번만 지급되는지 테스트
+- [ ] 테스트 완료 후 운영용 방에서 실제 경매와 팀장 입찰을 점검
+
+**주의:** SQL 마이그레이션은 운영 데이터베이스를 변경합니다. 이미 운영 중인 데이터베이스에서는 적용 이력을 확인하고, 가능하면 백업 후 새 마이그레이션만 적용하세요. service_role 키는 브라우저 환경변수나 GitHub 저장소에 올리지 마세요.
