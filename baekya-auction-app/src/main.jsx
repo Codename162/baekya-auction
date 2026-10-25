@@ -59,7 +59,7 @@ function App() {
       supabase.from('bids').select('*').eq('room_id', roomId).order('created_at', {ascending:false}).limit(100),
       supabase.from('auction_history').select('*').eq('room_id', roomId).order('created_at', {ascending:false}).limit(100),
       supabase.from('profiles').select('*').eq('id', session?.user?.id || '00000000-0000-0000-0000-000000000000').maybeSingle(),
-      supabase.from('profiles').select('id,discord_username,role').order('created_at')
+      supabase.from('profiles').select('id,discord_username,role,created_at').order('created_at')
     ]);
     if (r.error) setError('경매 방을 불러오지 못했습니다. 설정 안내의 SQL 초기화 단계를 확인해 주세요.'); else { setRoom(r.data); setGradePrices({ ...PRICE, ...(r.data.grade_prices || {}) }); }
     if (p.data) { setPlayers(p.data); setNicknameInputs(Object.fromEntries(p.data.map(player => [player.id, player.name]))); } if (t.data) { const loadedTeams = t.data.map(team => ({...team, roster_count: (p.data||[]).filter(player => player.team_id===team.id || player.captain_team_id===team.id).length})); setTeams(loadedTeams); setBudgetInputs(prev => Object.fromEntries(loadedTeams.map(team => [team.id, prev[team.id] ?? String(Number(team.budget) + Number(team.spent || 0))]))); } if (b.data) setBids(b.data); if (h.data) setHistory(h.data); if (pr.data) setProfile(pr.data); if (allProfiles.data) setProfiles(allProfiles.data)
