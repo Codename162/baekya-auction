@@ -25,3 +25,12 @@
 .feature-tab.active{background:linear-gradient(135deg,#30265b,#211d43);border-color:#8b80ff66;box-shadow:0 5px 18px #00000018}
 .feature-tab.active svg,.feature-tab.active span{color:#d9d3ff}
 @media(max-width:600px){.feature-tabs{gap:5px;padding:5px}.feature-tab{display:flex;flex-direction:column;justify-content:center;gap:6px;text-align:center;padding:12px 5px}.feature-tab svg{width:19px;height:19px}.feature-tab span{font-size:11px}.feature-tab small{font-size:9px;line-height:1.3}}
+
+
+/* Auction bid increment controls */
+.bid-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:end;margin:16px 0 10px}
+.bid-controls .field{margin:0}
+.bid-next{display:flex;flex-direction:column;gap:6px;padding:11px 13px;border:1px solid #8b80ff55;border-radius:12px;background:#201b3b;min-height:65px;justify-content:center}
+.bid-next small{font-size:11px;color:#b6b1d8}
+.bid-next strong{font-size:22px;color:#e3ddff;font-variant-numeric:tabular-nums}
+@media(max-width:480px){.bid-controls{gap:8px}.bid-next{padding:10px}.bid-next strong{font-size:19px}}
