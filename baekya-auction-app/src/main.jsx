@@ -45,6 +45,7 @@ function App() {
   const [newRoomTeamCount, setNewRoomTeamCount] = useState('3');
   const [newRoomType, setNewRoomType] = useState('auction');
   const [autoRegisteredKey, setAutoRegisteredKey] = useState('');
+  const [timerNow, setTimerNow] = useState(Date.now());
 
   const isAdmin = profile?.role === 'admin';
   const myTeam = teams.find(t => t.captain_user_id === session?.user?.id);
@@ -52,7 +53,7 @@ function App() {
   const highestBid = bids.filter(b => b.player_id === currentPlayer?.id).sort((a,b) => b.amount-a.amount || new Date(b.created_at)-new Date(a.created_at))[0] || null;
   const currentPrice = highestBid?.amount ?? currentPlayer?.start_price ?? null;
   const auctionDeadline = room?.current_player_id ? new Date((room.highest_team_id && room.last_bid_at ? room.last_bid_at : room.auction_started_at || new Date().toISOString())).getTime() + (room.highest_team_id && room.last_bid_at ? 5000 : 40000) : null;
-  const auctionSecondsLeft = auctionDeadline ? Math.max(0, Math.ceil((auctionDeadline - Date.now()) / 1000)) : 0;
+  const auctionSecondsLeft = auctionDeadline ? Math.max(0, Math.ceil((auctionDeadline - timerNow) / 1000)) : 0;
   const activePlayers = players.filter(p => !p.is_captain && p.status === 'available');
 
   async function loadAll() {
@@ -147,6 +148,11 @@ function App() {
     })();
     return () => { cancelled = true; };
   }, [session, roomId, rooms, autoRegisteredKey]);
+  useEffect(() => {
+    const timer = window.setInterval(() => setTimerNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     if (!session || !supabase || !roomId || room?.status !== 'running' || !room?.current_player_id || !room?.auction_started_at) return;
     const tick = async () => {
