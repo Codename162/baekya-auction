@@ -34,3 +34,23 @@
 .bid-next small{font-size:11px;color:#b6b1d8}
 .bid-next strong{font-size:22px;color:#e3ddff;font-variant-numeric:tabular-nums}
 @media(max-width:480px){.bid-controls{gap:8px}.bid-next{padding:10px}.bid-next strong{font-size:19px}}
+
+
+/* Integrated admin center */
+.admin-feature-tabs{grid-template-columns:repeat(5,minmax(0,1fr))}
+.admin-dashboard,.member-management{display:grid;gap:14px;margin:0 0 16px}
+.dashboard-welcome{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.dashboard-welcome h3{font-size:22px;margin:6px 0}
+.dashboard-welcome p{margin:4px 0}
+.dashboard-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.dashboard-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.dashboard-action{display:flex;flex-direction:column;align-items:flex-start;gap:9px;text-align:left;color:#f4f5ff;cursor:pointer;min-height:135px}
+.dashboard-action svg{color:#aaa0ff;width:22px;height:22px}
+.dashboard-action strong{font-size:14px}
+.dashboard-action span{font-size:11px;color:var(--muted);line-height:1.5}
+.dashboard-action:hover{border-color:#8b80ff77;transform:translateY(-1px)}
+.dashboard-recent{min-width:0}
+.member-management{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+.member-accounts{min-width:0}
+@media(max-width:900px){.admin-feature-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.member-management{grid-template-columns:1fr}}
+@media(max-width:600px){.admin-feature-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-welcome{align-items:flex-start;flex-direction:column}.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-action{min-height:125px;padding:14px}}
