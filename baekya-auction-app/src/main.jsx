@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createClient } from '@supabase/supabase-js';
-import { Moon, Gavel, Users, Coins, ShieldCheck, LogOut, RefreshCw, Plus, Play, Pause, CheckCircle2, History, Settings, CircleAlert, Trophy, Megaphone } from 'lucide-react';
+import { Moon, Gavel, Users, Coins, ShieldCheck, LogOut, RefreshCw, Plus, Play, Pause, CheckCircle2, History, Settings, CircleAlert, Trophy } from 'lucide-react';
 import './style.css';
 import SpectatorEvents from './SpectatorEvents.jsx';
 import TeamBalance from './TeamBalance.jsx';
