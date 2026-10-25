@@ -228,6 +228,12 @@ function App() {
     if (gradeError) setError(gradeError.message); else { setNotice(player.name + ' 선수 등급을 ' + grade + '급으로 변경했습니다.'); await loadAll(); }
   }
 
+  async function unsetCaptain(team) {
+    if (!team?.captain_user_id) return;
+    if (!window.confirm(team.name + ' 팀장의 지정을 해제할까요?')) return;
+    await action('unset_team_captain', { p_room_id: roomId, p_team_id: team.id });
+  }
+
   async function saveNickname(player) {
     const name = (nicknameInputs[player.id] || '').trim();
     if (!name) { setError('닉네임을 입력해 주세요.'); return; }
