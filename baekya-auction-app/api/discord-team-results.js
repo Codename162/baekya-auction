@@ -68,20 +68,28 @@ export default async function handler(req, res) {
       if (!Array.isArray(roster)) return send(res, 400, { error: `${name}: 팀원 명단을 읽지 못했습니다. 화면을 새로고침한 뒤 다시 시도해 주세요.` });
       if (roster.length !== teamSize) return send(res, 400, { error: `${name}: 현재 ${roster.length}명으로 확인됩니다. 팀당 설정 인원은 ${teamSize}명입니다. 팀 배정을 새로고침해 주세요.` });
       let emptyNameIndex = roster.findIndex(p => !clean(p?.name, 80));
-      // 화면에서 닉네임 또는 선수 ID가 누락된 경우, 저장된 팀 명단을 다시 조회해 복구합니다.
-      if (emptyNameIndex !== -1 && team?.id) {
-        const { data: savedPlayers, error: savedPlayersError } = await supabase
-          .from('players')
-          .select('id,name,is_captain,sold_price,team_id,captain_team_id')
-          .or(`team_id.eq.${team.id},captain_team_id.eq.${team.id}`);
-        if (!savedPlayersError && Array.isArray(savedPlayers) && savedPlayers.length === teamSize) {
-          roster = savedPlayers.map(player => ({
-            id: player.id,
-            name: clean(player.name, 80),
-            isCaptain: Boolean(player.is_captain),
-            soldPrice: player.sold_price == null ? null : Number(player.sold_price)
-          }));
-          emptyNameIndex = roster.findIndex(p => !clean(p?.name, 80));
+      // 팀 ID 필터 대신 선수 ID로 저장된 닉네임을 직접 조회합니다.
+      if (emptyNameIndex !== -1) {
+        const playerIds = [...new Set(roster.map(p => clean(p?.id, 100)).filter(Boolean))];
+        if (playerIds.length) {
+          const { data: savedPlayers, error: savedPlayersError } = await supabase
+            .from('players')
+            .select('id,name,is_captain,sold_price')
+            .in('id', playerIds);
+          if (!savedPlayersError && Array.isArray(savedPlayers)) {
+            const savedById = new Map(savedPlayers.map(player => [String(player.id), player]));
+            roster = roster.map(player => {
+              const saved = savedById.get(String(player.id));
+              if (!saved) return player;
+              return {
+                ...player,
+                name: clean(player.name, 80) || clean(saved.name, 80),
+                isCaptain: Boolean(player.isCaptain ?? saved.is_captain),
+                soldPrice: player.soldPrice ?? (saved.sold_price == null ? null : Number(saved.sold_price))
+              };
+            });
+            emptyNameIndex = roster.findIndex(p => !clean(p?.name, 80));
+          }
         }
       }
       if (emptyNameIndex !== -1) {
