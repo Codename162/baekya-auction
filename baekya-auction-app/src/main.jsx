@@ -32,7 +32,7 @@ function App() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [showAdmin, setShowAdmin] = useState(false);
-  const [activeSection, setActiveSection] = useState('auction');
+  const [activeSection, setActiveSection] = useState('dashboard');
   const [bidIncrement, setBidIncrement] = useState(1);
   const [newName, setNewName] = useState('');
   const [newGrade, setNewGrade] = useState('B');
