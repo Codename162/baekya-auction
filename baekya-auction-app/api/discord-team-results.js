@@ -6,7 +6,7 @@ function send(res, status, body) {
 }
 
 function clean(value, max = 100) {
-  return String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max);
+  return String(value ?? '').replace(/[\\u0000-\\u001f\\u007f]/g, '').trim().slice(0, max);
 }
 
 export default async function handler(req, res) {
@@ -68,14 +68,12 @@ export default async function handler(req, res) {
         return send(res, 400, { error: '모든 팀에 정확한 인원이 배정되어야 합니다.' });
       }
       const lines = roster.map(player => {
-        const playerName = clean(player.name, 80).replace(/([\\*_~`|>])/g, '\\$1');
+        const playerName = clean(player.name, 80).replace(/([\\\\*_~`|>])/g, '\\\\$1');
         const role = player.isCaptain ? ' **[TL]**' : '';
-        const grade = !player.isCaptain && player.grade ? ' · ' + clean(player.grade, 3) + '급' : '';
-        const score = Number.isFinite(Number(player.score)) && player.score !== null ? ' · ' + Number(player.score) + '점' : '';
         const price = Number.isFinite(Number(player.soldPrice)) && player.soldPrice !== null ? ' · 낙찰 ' + Number(player.soldPrice) + 'P' : '';
-        return '• ' + playerName + role + grade + score + price;
+        return '• ' + playerName + role + price;
       });
-      const value = lines.join('\n').slice(0, 1024);
+      const value = lines.join('\\n').slice(0, 1024);
       fields.push({ name: name.slice(0, 256), value, inline: teams.length <= 3 });
     }
 
