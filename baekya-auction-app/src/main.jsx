@@ -218,6 +218,16 @@ function App() {
     if (Object.values(gradePrices).some(v => !Number.isFinite(Number(v)) || Number(v) < 1 || Number(v) > 100)) { setError('등급별 시작가는 1~100P 사이로 입력해 주세요.'); return; }
     await action('update_auction_balance_settings', { p_room_id: roomId, p_team_budgets: budgets, p_grade_prices: Object.fromEntries(Object.entries(gradePrices).map(([k,v]) => [k, Number(v)])) });
   }
+  async function saveGrade(player, grade) {
+    if (!['S','A','B','C','D'].includes(grade) || player.is_captain) return;
+    setBusy(true); setError(''); setNotice('');
+    const changes = { grade };
+    if (player.status === 'available') changes.start_price = Number(gradePrices[grade] ?? PRICE[grade]);
+    const { error: gradeError } = await supabase.from('players').update(changes).eq('id', player.id).eq('room_id', roomId);
+    setBusy(false);
+    if (gradeError) setError(gradeError.message); else { setNotice(player.name + ' 선수 등급을 ' + grade + '급으로 변경했습니다.'); await loadAll(); }
+  }
+
   async function saveNickname(player) {
     const name = (nicknameInputs[player.id] || '').trim();
     if (!name) { setError('닉네임을 입력해 주세요.'); return; }
