@@ -6,7 +6,7 @@ function send(res, status, body) {
 }
 
 function clean(value, max = 100) {
-  return String(value ?? '').replace(/[\\u0000-\\u001f\\u007f]/g, '').trim().slice(0, max);
+  return String(value ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max);
 }
 
 export default async function handler(req, res) {
@@ -98,7 +98,7 @@ export default async function handler(req, res) {
         return send(res, 400, { error: `${name} 팀의 ${emptyNameIndex + 1}번째 선수${playerHint} 닉네임이 비어 있습니다. 저장된 명단에서도 닉네임을 확인하지 못했습니다. 관리자 메뉴에서 해당 팀의 선수 정보를 저장한 뒤 다시 전송해 주세요.` });
       }
       const lines = roster.map(player => {
-        const playerName = clean(player.name, 80).replace(/([\\\\*_~`|>])/g, '\\\\$1');
+        const playerName = clean(player.name, 80).replace(/([\\*_~\`|>])/g, '\\$1');
         const role = player.isCaptain ? ' **[TL]**' : '';
         const price = Number.isFinite(Number(player.soldPrice)) && player.soldPrice !== null ? ' · 낙찰 ' + Number(player.soldPrice) + 'P' : '';
         return '• ' + playerName + role + price;
