@@ -270,9 +270,19 @@ function App() {
     const name = (nicknameInputs[player.id] || '').trim();
     if (!name) { setError('닉네임을 입력해 주세요.'); return; }
     setBusy(true); setError(''); setNotice('');
-    const { error } = await supabase.from('players').update({ name }).eq('id', player.id).eq('room_id', roomId);
-    setBusy(false);
-    if (error) setError(error.message); else { setNotice(player.name + ' 닉네임을 수정했습니다.'); await loadAll(); }
+    try {
+      if (player.discord_user_id) {
+        const { error } = await supabase.from('players').update({ name }).eq('discord_user_id', player.discord_user_id).eq('is_captain', false);
+        if (error) throw error;
+        setNotice(player.name + ' 닉네임을 모든 방에서 동일하게 변경했습니다.');
+      } else {
+        const { error } = await supabase.from('players').update({ name }).eq('id', player.id).eq('room_id', roomId);
+        if (error) throw error;
+        setNotice(player.name + ' 닉네임을 변경했습니다. 이 선수는 Discord 계정과 연결되어 있지 않아 현재 방에만 적용됩니다.');
+      }
+      await loadAll();
+    } catch (e) { setError(e.message || '닉네임 변경에 실패했습니다.'); }
+    finally { setBusy(false); }
   }
   async function assignCaptain(e) {
     e.preventDefault();
@@ -359,7 +369,7 @@ function AdminDashboard({ room, rooms, teams, players, profiles, history, active
 }
 function MemberManagement({ players, allPlayers, profiles, teams, nicknameInputs, setNicknameInputs, saveNickname, saveGrade, saveGlobalGrade, unsetCaptain, busy, room }) {
   return <section className="member-management">
-    <div className="panel"><div className="panelhead"><div><h3>선수 닉네임 관리</h3><p className="tiny">현재 방: {room?.name || '미선택'} · {players.length}명</p></div></div>
+    <div className="panel"><div className="panelhead"><div><h3>통합 선수 닉네임 관리</h3><p className="tiny">Discord 계정이 연결된 선수는 모든 방의 닉네임이 함께 변경됩니다. · 현재 방 {players.length}명 표시</p></div></div>
       <div className="nickname-list">{players.length ? players.map(p=><div className="nickname-editor" key={p.id}><span className={'grade ' + (p.is_captain ? 'TL' : p.grade)}>{p.is_captain ? 'TL' : p.grade}</span><input aria-label={p.name + ' 닉네임'} value={nicknameInputs[p.id] ?? p.name} onChange={e=>setNicknameInputs(v=>({...v,[p.id]:e.target.value}))} disabled={busy}/><button type="button" className="btn primary" disabled={busy || !(nicknameInputs[p.id] || '').trim() || (nicknameInputs[p.id] || '').trim()===p.name} onClick={()=>saveNickname(p)}>닉네임 저장</button>{!p.is_captain && <label className="member-grade-control"><span className="tiny">등급</span><select aria-label={p.name + ' 등급'} value={p.grade} disabled={busy} onChange={e=>saveGrade(p,e.target.value)}>{['S','A','B','C','D'].map(g=><option key={g} value={g}>{g}급</option>)}</select></label>}</div>) : <div className="empty">현재 방에 등록된 선수가 없습니다.</div>}</div>
     </div>
     <div className="panel"><div className="panelhead"><div><h3>팀장 지정 관리</h3><p className="tiny">팀장 지정을 해제하면 해당 팀은 팀장 미지정 상태가 됩니다.</p></div></div><div className="playerlist">{teams.map(t=><div className="playerrow" key={t.id}><div className="grow"><strong>{t.name}</strong><small>팀장: {t.captain_name || '미지정'}</small></div>{t.captain_user_id ? <button type="button" className="btn danger" disabled={busy} onClick={()=>unsetCaptain(t)}>팀장 해제</button> : <span className="pill">미지정</span>}</div>)}</div></div>
