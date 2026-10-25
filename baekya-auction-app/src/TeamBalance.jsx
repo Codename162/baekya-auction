@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Scale, Users, Save, WandSparkles, RefreshCw, ShieldCheck } from 'lucide-react';
+import DiscordTeamResults from './DiscordTeamResults.jsx';
 
 const gradeDefault = { S: 100, A: 80, B: 60, C: 40, D: 20 };
 
@@ -56,7 +57,8 @@ export default function TeamBalance({ supabase, roomId, room, teams, players, hi
     finally { setBusy(false); }
   }
 
-  return <section className="panel team-balance-panel">
+  return <>
+  <section className="panel team-balance-panel">
     <div className="panelhead">
       <div className="balance-heading"><div className="balance-icon"><Scale size={18}/></div><div><h3>점수별 팀 배정</h3><p className="tiny">경매 없이 선수 점수 합계를 기준으로 팀을 자동 구성합니다.</p></div></div>
       <span className="pill">관리자 전용</span>
@@ -94,5 +96,7 @@ export default function TeamBalance({ supabase, roomId, room, teams, players, hi
       </div>
       <p className="tiny balance-footnote">기본 점수는 S=100, A=80, B=60, C=40, D=20으로 시작하며 직접 바꿀 수 있어. 자동 배정은 높은 점수 선수부터 현재 합계가 가장 낮은 팀에 배정하고, 팀장은 기존 팀에 유지해. 팀원 수 제한도 적용돼.</p>
     </>}
-  </section>;
+  </section>
+  <DiscordTeamResults supabase={supabase} room={room} teams={teams} players={players} isAdmin={isAdmin} />
+  </>;
 }
