@@ -54,3 +54,7 @@
 .member-accounts{min-width:0}
 @media(max-width:900px){.admin-feature-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}.dashboard-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.member-management{grid-template-columns:1fr}}
 @media(max-width:600px){.admin-feature-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-welcome{align-items:flex-start;flex-direction:column}.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-action{min-height:125px;padding:14px}}
+
+.member-management{grid-template-columns:1fr}
+.member-grade-control{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.member-grade-control select{min-width:76px;width:auto;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--text)}
