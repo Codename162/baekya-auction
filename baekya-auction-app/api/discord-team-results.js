@@ -63,15 +63,31 @@ export default async function handler(req, res) {
     const fields = [];
     for (const team of teams) {
       const name = clean(team?.name, 100);
-      const roster = team?.players;
+      let roster = team?.players;
       if (!name) return send(res, 400, { error: '팀 이름이 비어 있습니다. 팀 이름을 확인해 주세요.' });
       if (!Array.isArray(roster)) return send(res, 400, { error: `${name}: 팀원 명단을 읽지 못했습니다. 화면을 새로고침한 뒤 다시 시도해 주세요.` });
       if (roster.length !== teamSize) return send(res, 400, { error: `${name}: 현재 ${roster.length}명으로 확인됩니다. 팀당 설정 인원은 ${teamSize}명입니다. 팀 배정을 새로고침해 주세요.` });
-      const emptyNameIndex = roster.findIndex(p => !clean(p?.name, 80));
+      let emptyNameIndex = roster.findIndex(p => !clean(p?.name, 80));
+      // 화면에서 닉네임 또는 선수 ID가 누락된 경우, 저장된 팀 명단을 다시 조회해 복구합니다.
+      if (emptyNameIndex !== -1 && team?.id) {
+        const { data: savedPlayers, error: savedPlayersError } = await supabase
+          .from('players')
+          .select('id,name,is_captain,sold_price,team_id,captain_team_id')
+          .or(`team_id.eq.${team.id},captain_team_id.eq.${team.id}`);
+        if (!savedPlayersError && Array.isArray(savedPlayers) && savedPlayers.length === teamSize) {
+          roster = savedPlayers.map(player => ({
+            id: player.id,
+            name: clean(player.name, 80),
+            isCaptain: Boolean(player.is_captain),
+            soldPrice: player.sold_price == null ? null : Number(player.sold_price)
+          }));
+          emptyNameIndex = roster.findIndex(p => !clean(p?.name, 80));
+        }
+      }
       if (emptyNameIndex !== -1) {
         const playerId = clean(roster[emptyNameIndex]?.id, 80);
         const playerHint = playerId ? ` (선수 ID 끝자리: ${playerId.slice(-6)})` : '';
-        return send(res, 400, { error: `${name} 팀의 ${emptyNameIndex + 1}번째 선수${playerHint} 닉네임이 비어 있습니다. 관리자 메뉴에서 닉네임을 입력하고 저장한 뒤 다시 전송해 주세요.` });
+        return send(res, 400, { error: `${name} 팀의 ${emptyNameIndex + 1}번째 선수${playerHint} 닉네임이 비어 있습니다. 저장된 명단에서도 닉네임을 확인하지 못했습니다. 관리자 메뉴에서 해당 팀의 선수 정보를 저장한 뒤 다시 전송해 주세요.` });
       }
       const lines = roster.map(player => {
         const playerName = clean(player.name, 80).replace(/([\\\\*_~`|>])/g, '\\\\$1');
