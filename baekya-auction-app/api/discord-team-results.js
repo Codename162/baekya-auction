@@ -69,7 +69,7 @@ export default async function handler(req, res) {
       if (roster.length !== teamSize) return send(res, 400, { error: `${name}: 현재 ${roster.length}명으로 확인됩니다. 팀당 설정 인원은 ${teamSize}명입니다. 팀 배정을 새로고침해 주세요.` });
       // 결과 메시지는 닉네임만 표시합니다. 이름이 비어 있는 경우에도 전체 전송을 막지 않습니다.
       const lines = roster.map(player => clean(player?.name, 80) || '닉네임 미등록');
-      const value = lines.join('\\n').slice(0, 1024);
+      const value = lines.join(String.fromCharCode(10)).slice(0, 1024);
       fields.push({ name: name.slice(0, 256), value, inline: teams.length <= 3 });
     }
 
