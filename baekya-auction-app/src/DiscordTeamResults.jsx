@@ -14,7 +14,8 @@ export default function DiscordTeamResults({ supabase, room, teams, players, isA
     players: players
       .filter(player => player.team_id === team.id || player.captain_team_id === team.id)
       .map(player => ({
-        name: player.name,
+        id: player.id,
+        name: player.name?.trim() || (player.is_captain ? team.captain_name?.trim() : ''),
         isCaptain: Boolean(player.is_captain),
         grade: player.is_captain ? 'TL' : player.grade,
         score: player.skill_score == null ? null : Number(player.skill_score),
