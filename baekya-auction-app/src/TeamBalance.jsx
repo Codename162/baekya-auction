@@ -75,7 +75,7 @@ export default function TeamBalance({ supabase, roomId, room, teams, players, hi
         <div className="balance-score-list">
           <div className="balance-subhead"><strong>선수별 점수</strong><span className="tiny">{players.length}명 · 점수 직접 입력</span></div>
           {!players.length ? <div className="empty">먼저 관리자 설정에서 선수를 등록해 주세요.</div> : sortedPlayers.map(p => <div className="balance-player" key={p.id}>
-            <span className={'grade ' + p.grade}>{p.grade}</span>
+            <span className={'grade ' + (p.is_captain ? 'TL' : p.grade)}>{p.is_captain ? 'TL' : p.grade}</span>
             <div className="grow"><strong>{p.name}{p.is_captain ? ' · 팀장' : ''}</strong><small>{p.is_captain ? '팀장 고정 배정' : '점수가 높을수록 팀 합계 계산에 더 크게 반영'}</small></div>
             <label className="score-input"><span className="sr-only">{p.name} 점수</span><input aria-label={p.name + ' 점수'} type="number" min="0" max="100" step="1" value={scores[p.id] ?? 50} disabled={busy} onChange={e=>setScores(v=>({...v,[p.id]:e.target.value}))}/><small>점</small></label>
           </div>)}
