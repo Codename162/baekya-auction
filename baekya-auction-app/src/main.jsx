@@ -42,6 +42,7 @@ function App() {
   const [newRoomBudget, setNewRoomBudget] = useState('30');
   const [newRoomTeamSize, setNewRoomTeamSize] = useState('5');
   const [newRoomTeamCount, setNewRoomTeamCount] = useState('3');
+  const [autoRegisteredKey, setAutoRegisteredKey] = useState('');
 
   const isAdmin = profile?.role === 'admin';
   const myTeam = teams.find(t => t.captain_user_id === session?.user?.id);
@@ -114,6 +115,33 @@ function App() {
     return () => { cancelled = true; };
   }, [session]);
   useEffect(() => { if (session && supabase && roomId) loadAll(); }, [session, roomId]);
+
+  useEffect(() => {
+    if (!session?.user?.id || !supabase || !roomId) return;
+    const selectedRoom = rooms.find(r => r.id === roomId);
+    if (!selectedRoom || selectedRoom.status === 'finished') return;
+    const registrationKey = `${session.user.id}:${roomId}`;
+    if (autoRegisteredKey === registrationKey) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error: registrationError } = await supabase.rpc('register_discord_player', { p_room_id: roomId });
+      if (cancelled) return;
+      if (registrationError) {
+        setError('선수 자동 등록에 실패했습니다: ' + registrationError.message);
+        return;
+      }
+      setAutoRegisteredKey(registrationKey);
+      if (data?.status === 'registered') {
+        setNotice(`${data.name || 'Discord 사용자'}님이 선수 목록에 자동 등록되었습니다.`);
+        await loadAll();
+      } else if (data?.status === 'captain') {
+        setAutoRegisteredKey(registrationKey);
+      } else {
+        setAutoRegisteredKey(registrationKey);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [session, roomId, rooms, autoRegisteredKey]);
   useEffect(() => {
     if (!supabase || !session || !roomId) return;
     const channel = supabase.channel(`auction-${roomId}`)
@@ -257,7 +285,7 @@ function MemberManagement({ players, profiles, nicknameInputs, setNicknameInputs
       <div className="nickname-list">{players.length ? players.map(p=><div className="nickname-editor" key={p.id}><span className={'grade ' + (p.is_captain ? 'TL' : p.grade)}>{p.is_captain ? 'TL' : p.grade}</span><input aria-label={p.name + ' 닉네임'} value={nicknameInputs[p.id] ?? p.name} onChange={e=>setNicknameInputs(v=>({...v,[p.id]:e.target.value}))} disabled={busy}/><button type="button" className="btn primary" disabled={busy || !(nicknameInputs[p.id] || '').trim() || (nicknameInputs[p.id] || '').trim()===p.name} onClick={()=>saveNickname(p)}>저장</button></div>) : <div className="empty">현재 방에 등록된 선수가 없습니다.</div>}</div>
     </div>
     <div className="panel member-accounts"><div className="panelhead"><div><h3>Discord 로그인 계정</h3><p className="tiny">사이트에 로그인한 계정 목록입니다. 계정 권한은 관리자 설정에서 별도 관리됩니다.</p></div><span className="pill">{profiles.length}개 계정</span></div>
-      {profiles.length ? <div className="playerlist">{profiles.map(p=><div className="playerrow" key={p.id}><div className="avatar" style={{width:36,height:36,fontSize:12,borderRadius:10}}><Users size={16}/></div><div className="grow"><strong>{p.discord_username || '이름 미등록'}</strong><small>{p.role === 'admin' ? '관리자' : p.role === 'captain' ? '팀장' : '일반 멤버'} · 가입 {p.created_at ? new Date(p.created_at).toLocaleDateString('ko-KR') : '날짜 미상'}</small></div><span className="pill">{p.role}</span></div>)}</div> : <div className="empty">등록된 Discord 계정이 없습니다.</div>}
+      {profiles.length ? <div className="playerlist">{profiles.map(p=><div className="playerrow" key={p.id}><div className="avatar" style={{width:36,height:36,fontSize:12,borderRadius:10}}><Users size={16}/></div><div className="grow"><strong>{p.discord_username || '이름 미등록'}</strong><small>{p.role === 'admin' ? '관리자' : p.role === 'captain' ? '팀장' : '일반 멤버'} · 가입 {p.created_at ? new Date(p.created_at).toLocaleDateString('ko-KR') : '날짜 미상'} · {players.some(player => player.discord_user_id === p.id) ? '선수 등록 완료' : '선수 미등록'}</small></div><span className="pill">{p.role}</span></div>)}</div> : <div className="empty">등록된 Discord 계정이 없습니다.</div>}
     </div>
   </section>;
 }
