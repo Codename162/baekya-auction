@@ -67,42 +67,8 @@ export default async function handler(req, res) {
       if (!name) return send(res, 400, { error: '팀 이름이 비어 있습니다. 팀 이름을 확인해 주세요.' });
       if (!Array.isArray(roster)) return send(res, 400, { error: `${name}: 팀원 명단을 읽지 못했습니다. 화면을 새로고침한 뒤 다시 시도해 주세요.` });
       if (roster.length !== teamSize) return send(res, 400, { error: `${name}: 현재 ${roster.length}명으로 확인됩니다. 팀당 설정 인원은 ${teamSize}명입니다. 팀 배정을 새로고침해 주세요.` });
-      let emptyNameIndex = roster.findIndex(p => !clean(p?.name, 80));
-      // 팀 ID 필터 대신 선수 ID로 저장된 닉네임을 직접 조회합니다.
-      if (emptyNameIndex !== -1) {
-        const playerIds = [...new Set(roster.map(p => clean(p?.id, 100)).filter(Boolean))];
-        if (playerIds.length) {
-          const { data: savedPlayers, error: savedPlayersError } = await supabase
-            .from('players')
-            .select('id,name,is_captain,sold_price')
-            .in('id', playerIds);
-          if (!savedPlayersError && Array.isArray(savedPlayers)) {
-            const savedById = new Map(savedPlayers.map(player => [String(player.id), player]));
-            roster = roster.map(player => {
-              const saved = savedById.get(String(player.id));
-              if (!saved) return player;
-              return {
-                ...player,
-                name: clean(player.name, 80) || clean(saved.name, 80),
-                isCaptain: Boolean(player.isCaptain ?? saved.is_captain),
-                soldPrice: player.soldPrice ?? (saved.sold_price == null ? null : Number(saved.sold_price))
-              };
-            });
-            emptyNameIndex = roster.findIndex(p => !clean(p?.name, 80));
-          }
-        }
-      }
-      if (emptyNameIndex !== -1) {
-        const playerId = clean(roster[emptyNameIndex]?.id, 80);
-        const playerHint = playerId ? ` (선수 ID 끝자리: ${playerId.slice(-6)})` : '';
-        return send(res, 400, { error: `${name} 팀의 ${emptyNameIndex + 1}번째 선수${playerHint} 닉네임이 비어 있습니다. 저장된 명단에서도 닉네임을 확인하지 못했습니다. 관리자 메뉴에서 해당 팀의 선수 정보를 저장한 뒤 다시 전송해 주세요.` });
-      }
-      const lines = roster.map(player => {
-        const playerName = clean(player.name, 80).replace(/([\\*_~\`|>])/g, '\\$1');
-        const role = player.isCaptain ? ' **[TL]**' : '';
-        const price = Number.isFinite(Number(player.soldPrice)) && player.soldPrice !== null ? ' · 낙찰 ' + Number(player.soldPrice) + 'P' : '';
-        return '• ' + playerName + role + price;
-      });
+      // 결과 메시지는 닉네임만 표시합니다. 이름이 비어 있는 경우에도 전체 전송을 막지 않습니다.
+      const lines = roster.map(player => clean(player?.name, 80) || '닉네임 미등록');
       const value = lines.join('\\n').slice(0, 1024);
       fields.push({ name: name.slice(0, 256), value, inline: teams.length <= 3 });
     }
