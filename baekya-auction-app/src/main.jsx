@@ -23,6 +23,7 @@ function App() {
   const [roomId, setRoomId] = useState(defaultRoomId || '');
   const [teams, setTeams] = useState([]);
   const [players, setPlayers] = useState([]);
+  const [allPlayers, setAllPlayers] = useState([]);
   const [bids, setBids] = useState([]);
   const [history, setHistory] = useState([]);
   const [profiles, setProfiles] = useState([]);
@@ -55,17 +56,18 @@ function App() {
 
   async function loadAll() {
     if (!supabase || !roomId) return;
-    const [r,t,p,b,h,pr,allProfiles] = await Promise.all([
+    const [r,t,p,b,h,pr,allProfiles,allRoomPlayers] = await Promise.all([
       supabase.from('rooms').select('*').eq('id', roomId).single(),
       supabase.from('teams').select('*').eq('room_id', roomId).order('team_number'),
       supabase.from('players').select('*').eq('room_id', roomId).order('created_at'),
       supabase.from('bids').select('*').eq('room_id', roomId).order('created_at', {ascending:false}).limit(100),
       supabase.from('auction_history').select('*').eq('room_id', roomId).order('created_at', {ascending:false}).limit(100),
       supabase.from('profiles').select('*').eq('id', session?.user?.id || '00000000-0000-0000-0000-000000000000').maybeSingle(),
-      supabase.from('profiles').select('id,discord_username,role,created_at').order('created_at')
+      supabase.from('profiles').select('id,discord_username,role,created_at').order('created_at'),
+      supabase.from('players').select('*').not('discord_user_id', 'is', null)
     ]);
     if (r.error) setError('경매 방을 불러오지 못했습니다. 설정 안내의 SQL 초기화 단계를 확인해 주세요.'); else { setRoom(r.data); setGradePrices({ ...PRICE, ...(r.data.grade_prices || {}) }); }
-    if (p.data) { setPlayers(p.data); setNicknameInputs(Object.fromEntries(p.data.map(player => [player.id, player.name]))); } if (t.data) { const loadedTeams = t.data.map(team => ({...team, roster_count: (p.data||[]).filter(player => player.team_id===team.id || player.captain_team_id===team.id).length})); setTeams(loadedTeams); setBudgetInputs(prev => Object.fromEntries(loadedTeams.map(team => [team.id, prev[team.id] ?? String(Number(team.budget) + Number(team.spent || 0))]))); } if (b.data) setBids(b.data); if (h.data) setHistory(h.data); if (pr.data) setProfile(pr.data); if (allProfiles.data) setProfiles(allProfiles.data)
+    if (p.data) { setPlayers(p.data); setNicknameInputs(Object.fromEntries(p.data.map(player => [player.id, player.name]))); } if (allRoomPlayers.data) setAllPlayers(allRoomPlayers.data); if (t.data) { const loadedTeams = t.data.map(team => ({...team, roster_count: (p.data||[]).filter(player => player.team_id===team.id || player.captain_team_id===team.id).length})); setTeams(loadedTeams); setBudgetInputs(prev => Object.fromEntries(loadedTeams.map(team => [team.id, prev[team.id] ?? String(Number(team.budget) + Number(team.spent || 0))]))); } if (b.data) setBids(b.data); if (h.data) setHistory(h.data); if (pr.data) setProfile(pr.data); if (allProfiles.data) setProfiles(allProfiles.data)
   }
 
   useEffect(() => {
@@ -225,9 +227,36 @@ function App() {
     setBusy(true); setError(''); setNotice('');
     const changes = { grade };
     if (player.status === 'available') changes.start_price = Number(gradePrices[grade] ?? PRICE[grade]);
-    const { error: gradeError } = await supabase.from('players').update(changes).eq('id', player.id).eq('room_id', roomId);
+    const { error: gradeError } = await supabase.from('players').update(changes).eq('id', player.id).eq('room_id', player.room_id || roomId);
     setBusy(false);
     if (gradeError) setError(gradeError.message); else { setNotice(player.name + ' 선수 등급을 ' + grade + '급으로 변경했습니다.'); await loadAll(); }
+  }
+
+  async function saveGlobalGrade(discordUserId, grade) {
+    if (!discordUserId || !['S','A','B','C','D'].includes(grade)) return;
+    const linkedPlayers = allPlayers.filter(player => player.discord_user_id === discordUserId && !player.is_captain);
+    if (!linkedPlayers.length) { setError('이 Discord 계정과 연결된 선수를 찾을 수 없습니다.'); return; }
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const { data: roomSettings, error: roomsError } = await supabase.from('rooms').select('id,grade_prices');
+      if (roomsError) throw roomsError;
+      for (const player of linkedPlayers) {
+        const roomSettingsForPlayer = roomSettings?.find(item => item.id === player.room_id);
+        const changes = { grade };
+        if (player.status === 'available') {
+          const prices = { ...PRICE, ...(roomSettingsForPlayer?.grade_prices || {}) };
+          changes.start_price = Number(prices[grade] ?? PRICE[grade]);
+        }
+        const { error: updateError } = await supabase.from('players').update(changes).eq('id', player.id).eq('room_id', player.room_id);
+        if (updateError) throw updateError;
+      }
+      setNotice('연결된 모든 방에서 해당 선수 등급을 ' + grade + '급으로 변경했습니다.');
+      await loadAll();
+    } catch (e) {
+      setError(e.message || '전체 방 등급 변경에 실패했습니다.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function unsetCaptain(team) {
@@ -334,7 +363,7 @@ function MemberManagement({ players, profiles, teams, nicknameInputs, setNicknam
     </div>
     <div className="panel"><div className="panelhead"><div><h3>팀장 지정 관리</h3><p className="tiny">팀장 지정을 해제하면 해당 팀은 팀장 미지정 상태가 됩니다.</p></div></div><div className="playerlist">{teams.map(t=><div className="playerrow" key={t.id}><div className="grow"><strong>{t.name}</strong><small>팀장: {t.captain_name || '미지정'}</small></div>{t.captain_user_id ? <button type="button" className="btn danger" disabled={busy} onClick={()=>unsetCaptain(t)}>팀장 해제</button> : <span className="pill">미지정</span>}</div>)}</div></div>
     <div className="panel member-accounts"><div className="panelhead"><div><h3>Discord 로그인 계정</h3><p className="tiny">사이트에 로그인한 계정 목록입니다. 계정 권한은 관리자 설정에서 별도 관리됩니다.</p></div><span className="pill">{profiles.length}개 계정</span></div>
-      {profiles.length ? <div className="playerlist">{profiles.map(p=><div className="playerrow" key={p.id}><div className="avatar" style={{width:36,height:36,fontSize:12,borderRadius:10}}><Users size={16}/></div><div className="grow"><strong>{p.discord_username || '이름 미등록'}</strong><small>{p.role === 'admin' ? '관리자' : p.role === 'captain' ? '팀장' : '일반 멤버'} · 가입 {p.created_at ? new Date(p.created_at).toLocaleDateString('ko-KR') : '날짜 미상'} · {players.some(player => player.discord_user_id === p.id) ? '선수 등록 완료' : '선수 미등록'}</small></div>{(() => { const linkedPlayer = players.find(player => player.discord_user_id === p.id); return linkedPlayer && !linkedPlayer.is_captain ? <label className="member-grade-control"><span className="tiny">등급</span><select aria-label={p.discord_username + ' 선수 등급'} value={linkedPlayer.grade} disabled={busy} onChange={e => saveGrade(linkedPlayer, e.target.value)}>{['S','A','B','C','D'].map(g => <option key={g} value={g}>{g}급</option>)}</select></label> : <span className="pill">{p.role}</span>; })()}</div>)}</div> : <div className="empty">등록된 Discord 계정이 없습니다.</div>}
+      {profiles.length ? <div className="playerlist">{profiles.map(p=><div className="playerrow" key={p.id}><div className="avatar" style={{width:36,height:36,fontSize:12,borderRadius:10}}><Users size={16}/></div><div className="grow"><strong>{p.discord_username || '이름 미등록'}</strong><small>{p.role === 'admin' ? '관리자' : p.role === 'captain' ? '팀장' : '일반 멤버'} · 가입 {p.created_at ? new Date(p.created_at).toLocaleDateString('ko-KR') : '날짜 미상'} · {players.some(player => player.discord_user_id === p.id) ? '선수 등록 완료' : '선수 미등록'}</small></div>{(() => { const linkedPlayer = allPlayers.find(player => player.discord_user_id === p.id && !player.is_captain); return linkedPlayer ? <label className="member-grade-control"><span className="tiny">전체 방 등급</span><select aria-label={p.discord_username + ' 전체 방 선수 등급'} value={linkedPlayer.grade} disabled={busy} onChange={e => saveGlobalGrade(p.id, e.target.value)}>{['S','A','B','C','D'].map(g => <option key={g} value={g}>{g}급</option>)}</select></label> : <span className="pill">{p.role}</span>; })()}</div>)}</div> : <div className="empty">등록된 Discord 계정이 없습니다.</div>}
     </div>
   </section>;
 }
