@@ -371,4 +371,15 @@ function MemberManagement({ players, profiles, teams, nicknameInputs, setNicknam
 function Stat({icon,label,value,sub}) { return <div className="stat"><div className="stat-icon">{icon}</div><small>{label}</small><strong>{value}</strong><span>{sub}</span></div>; }
 function Setup() { return <main className="setup"><div className="logo"><Moon size={28}/></div><p className="eyebrow">BAEKYA AUCTION · SETUP REQUIRED</p><h1>사이트 연결 설정이 필요해요.</h1><p>프로젝트 폴더의 <code>.env.example</code>을 복사해 <code>.env</code> 파일을 만들고, Supabase 프로젝트 URL·anon key·경매 방 UUID를 입력한 뒤 실행하세요.</p><ol><li>Supabase 프로젝트 생성</li><li><code>supabase/migrations/001_schema.sql</code>을 SQL Editor에서 실행</li><li>Authentication → Providers에서 Discord 활성화</li><li>환경변수 입력 후 <code>npm install</code>, <code>npm run dev</code></li></ol><p className="tiny">이 미리보기는 실제 계정이나 서버에 아직 연결되지 않았습니다.</p></main>; }
 
-createRoot(document.getElementById('root')).render(<App/>);
+
+class AppErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error, info) { console.error('BAEKYA_RENDER_ERROR', error, info); }
+  render() {
+    if (this.state.error) return <main style={{minHeight:'100vh',padding:'28px 20px',background:'#0b1020',color:'#f4f5ff',fontFamily:'system-ui,sans-serif'}}><h1 style={{color:'#aaa0ff'}}>BAEKYA AUCTION</h1><h2>화면을 불러오지 못했습니다.</h2><p>오류 내용</p><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere',padding:16,background:'#141b30',borderRadius:12}}>{String(this.state.error?.message || this.state.error)}</pre><button style={{padding:'12px 16px',borderRadius:10}} onClick={()=>window.location.reload()}>새로고침</button></main>;
+    return this.props.children;
+  }
+}
+
+createRoot(document.getElementById('root')).render(<AppErrorBoundary><App/></AppErrorBoundary>);
