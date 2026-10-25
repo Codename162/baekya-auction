@@ -5,6 +5,7 @@ import { Moon, Gavel, Users, Coins, ShieldCheck, LogOut, RefreshCw, Plus, Play, 
 import './style.css';
 import SpectatorEvents from './SpectatorEvents.jsx';
 import TeamBalance from './TeamBalance.jsx';
+import DiscordTeamResults from './DiscordTeamResults.jsx';
 
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
