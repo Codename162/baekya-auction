@@ -2,7 +2,17 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Search, Trophy, Gavel, Users, Medal, Save, Swords } from 'lucide-react';
 import './PlayerProfiles.css';
 
-const emptyEdit = p => ({ main_position: p.main_position || '', tier: p.tier || '', favorite_champions: (p.favorite_champions || []).join(', ') });
+const GAME_OPTIONS = ['리그 오브 레전드', '발로란트', '오버워치 2', '에이펙스 레전드', '배틀그라운드', '와일드 리프트', '이터널 리턴', '마인크래프트', '기타'];
+const blankGame = game => ({ game, position: '', tier: '', favorites: '', notes: '' });
+const emptyEdit = p => {
+  const saved = Array.isArray(p.game_profiles) ? p.game_profiles : [];
+  const games = saved.length ? saved.map(g => ({ ...blankGame(g.game || '기타'), ...g, favorites: Array.isArray(g.favorites) ? g.favorites.join(', ') : (g.favorites || '') })) : (
+    (p.main_position || p.tier || (p.favorite_champions || []).length)
+      ? [{ ...blankGame('리그 오브 레전드'), position: p.main_position || '', tier: p.tier || '', favorites: (p.favorite_champions || []).join(', ') }]
+      : []
+  );
+  return { games };
+};
 
 export default function PlayerProfiles({ supabase, roomId, room, players = [], teams = [], history = [], isAdmin = false, onRefresh }) {
   const [tournamentResults, setTournamentResults] = useState([]);
@@ -46,14 +56,22 @@ export default function PlayerProfiles({ supabase, roomId, room, players = [], t
 
   async function saveProfile(player) {
     const value = edits[player.id] || emptyEdit(player);
-    const main_position = value.main_position.trim().slice(0, 40);
-    const tier = value.tier.trim().slice(0, 40);
-    const favorite_champions = [...new Set(value.favorite_champions.split(',').map(s => s.trim()).filter(Boolean))].slice(0, 10);
+    const game_profiles = (value.games || []).map(g => ({
+      game: String(g.game || '기타').trim().slice(0, 60),
+      position: String(g.position || '').trim().slice(0, 80),
+      tier: String(g.tier || '').trim().slice(0, 80),
+      favorites: [...new Set(String(g.favorites || '').split(',').map(s => s.trim()).filter(Boolean))].slice(0, 20),
+      notes: String(g.notes || '').trim().slice(0, 240)
+    })).filter(g => g.game);
+    const lol = game_profiles.find(g => g.game === '리그 오브 레전드');
+    const main_position = lol?.position || '';
+    const tier = lol?.tier || '';
+    const favorite_champions = lol?.favorites || [];
     setBusyId(player.id); setError(''); setNotice('');
     try {
-      const { error: updateError } = await supabase.from('players').update({ main_position, tier, favorite_champions }).eq('id', player.id).eq('room_id', roomId);
+      const { error: updateError } = await supabase.from('players').update({ game_profiles, main_position, tier, favorite_champions }).eq('id', player.id).eq('room_id', roomId);
       if (updateError) throw updateError;
-      setNotice(player.name + ' 선수 프로필을 저장했습니다.');
+      setNotice(player.name + ' 선수의 게임별 프로필을 저장했습니다.');
       setEditingId('');
       if (onRefresh) await onRefresh();
     } catch (e) { setError(e.message || '프로필 저장에 실패했습니다.'); }
@@ -76,8 +94,15 @@ export default function PlayerProfiles({ supabase, roomId, room, players = [], t
       return <article className="profile-card" key={player.id}>
         <div className="profile-card-top"><span className={'grade '+player.grade}>{player.grade}</span><span className="pill">{player.status==='sold'?'낙찰 완료':player.status==='auctioning'?'경매 중':player.status==='passed'?'유찰':'대기 중'}</span></div>
         <h3>{player.name}</h3><p className="profile-team"><Users size={14}/>{player.teamName}</p>
-        <div className="profile-tags"><span><Swords size={13}/> 주 포지션: {player.main_position || '미등록'}</span><span>티어: {player.tier || '미등록'}</span></div>
-        <p className="profile-champions">선호 챔피언: {(player.favorite_champions || []).length ? player.favorite_champions.join(' · ') : '미등록'}</p>
+        <div className="profile-game-list">
+          {(Array.isArray(player.game_profiles) && player.game_profiles.length ? player.game_profiles : ((player.main_position || player.tier || (player.favorite_champions || []).length) ? [{game:'리그 오브 레전드',position:player.main_position,tier:player.tier,favorites:player.favorite_champions}] : [])).map((g, index) => <div className="profile-game-item" key={(g.game || 'game') + index}>
+            <div className="profile-game-title"><strong>{g.game || '게임'}</strong>{g.tier && <span>{g.tier}</span>}</div>
+            {g.position && <p><span>주 포지션</span>{g.position}</p>}
+            {Array.isArray(g.favorites) && g.favorites.length > 0 && <p><span>{g.game === '발로란트' ? '선호 요원' : '선호 캐릭터'}</span>{g.favorites.join(' · ')}</p>}
+            {g.notes && <p><span>메모</span>{g.notes}</p>}
+          </div>)}
+          {!(Array.isArray(player.game_profiles) && player.game_profiles.length) && !(player.main_position || player.tier || (player.favorite_champions || []).length) && <p className="profile-champions">아직 등록된 게임 프로필이 없습니다.</p>}
+        </div>
         <div className="profile-card-stats">
           <div><small>시작가</small><strong>{player.start_price ?? 0}P</strong></div>
           <div><small>낙찰가</small><strong>{player.sold_price != null ? player.sold_price+'P' : player.soldRecord ? player.soldRecord.price+'P' : '—'}</strong></div>
@@ -86,11 +111,18 @@ export default function PlayerProfiles({ supabase, roomId, room, players = [], t
         <div className="profile-card-foot"><span><Trophy size={14}/>대회 MVP {player.mvpCount}회</span><span><Gavel size={14}/>낙찰 기록 {player.auctionRecords.length}건</span><span>팀 승리 {player.wins}/{player.appearances}</span></div>
         {isAdmin && <div className="profile-edit">
           {editingId === player.id ? <>
-            <label className="field">주 포지션<input maxLength="40" value={edit.main_position} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,main_position:e.target.value}}))} placeholder="예: 미드 / 정글"/></label>
-            <label className="field">티어<input maxLength="40" value={edit.tier} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,tier:e.target.value}}))} placeholder="예: 다이아몬드 2"/></label>
-            <label className="field">선호 챔피언 (쉼표로 구분)<input maxLength="300" value={edit.favorite_champions} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,favorite_champions:e.target.value}}))} placeholder="예: 아리, 오리아나, 신드라"/></label>
+            <div className="profile-game-editor-heading"><strong>게임별 프로필</strong><button className="btn ghost" type="button" onClick={() => setEdits(v=>({...v,[player.id]:{...edit,games:[...(edit.games||[]),blankGame('리그 오브 레전드')]}}))}>+ 게임 추가</button></div>
+            {(edit.games || []).map((gameProfile, gameIndex) => <div className="profile-game-editor" key={gameIndex}>
+              <div className="profile-game-editor-top"><strong>게임 프로필 {gameIndex + 1}</strong><button className="btn danger" type="button" onClick={() => setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.filter((_,i)=>i!==gameIndex)}}))}>삭제</button></div>
+              <label className="field">게임<select value={gameProfile.game} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,game:e.target.value}:g)}}))}>{[...new Set([...GAME_OPTIONS,gameProfile.game].filter(Boolean))].map(g=><option key={g} value={g}>{g}</option>)}</select></label>
+              <label className="field">주 포지션 / 역할<input maxLength="80" value={gameProfile.position || ''} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,position:e.target.value}:g)}}))} placeholder="예: 미드, 정글, 듀얼리스트, 서포트"/></label>
+              <label className="field">티어 / 랭크<input maxLength="80" value={gameProfile.tier || ''} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,tier:e.target.value}:g)}}))} placeholder="예: 다이아몬드, 불멸, 마스터"/></label>
+              <label className="field">선호 캐릭터 / 요원 (쉼표로 구분)<input maxLength="500" value={gameProfile.favorites || ''} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,favorites:e.target.value}:g)}}))} placeholder="예: 아리, 제트, 겐지"/></label>
+              <label className="field">추가 소개<textarea maxLength="240" rows="2" value={gameProfile.notes || ''} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,notes:e.target.value}:g)}}))} placeholder="선호 포지션, 플레이 스타일 등"/></label>
+            </div>)}
+            {!edit.games?.length && <p className="tiny">등록할 게임이 없습니다. ‘게임 추가’를 눌러 프로필을 만들어 주세요.</p>}
             <div className="profile-edit-actions"><button className="btn primary" type="button" disabled={busyId===player.id} onClick={()=>saveProfile(player)}><Save size={14}/>{busyId===player.id?'저장 중…':'프로필 저장'}</button><button className="btn ghost" type="button" onClick={()=>setEditingId('')}>취소</button></div>
-          </> : <button className="btn ghost full" type="button" onClick={()=>{setEdits(v=>({...v,[player.id]:emptyEdit(player)}));setEditingId(player.id);}}>프로필 편집</button>}
+          </> : <button className="btn ghost full" type="button" onClick={()=>{setEdits(v=>({...v,[player.id]:emptyEdit(player)}));setEditingId(player.id);}}>게임 프로필 편집</button>}
         </div>}
       </article>;
     })}</div> : <div className="empty">조건에 맞는 선수가 없습니다.</div>}
