@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Archive, ClipboardList, Download, RefreshCw, RotateCcw, ShieldCheck } from 'lucide-react';
+import './RoomTools.css';
 
 function downloadJson(name, value) {
   const blob = new Blob([JSON.stringify(value, null, 2)], { type: 'application/json;charset=utf-8' });
