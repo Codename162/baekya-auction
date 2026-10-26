@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CalendarDays, Check, Edit3, Megaphone, Save, Send, Trash2, Trophy, X, Medal } from 'lucide-react';
+import { CalendarDays, Edit3, Megaphone, Save, Trash2, Trophy, X, Medal } from 'lucide-react';
 import './AdminRecords.css';
 
 const dateOnly = () => new Date().toLocaleDateString('en-CA');
@@ -112,22 +112,6 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
     else { setNotice('이벤트 공지를 삭제했습니다.'); await load(); if (editingAnnouncement === item.id) resetAnnouncement(); }
   }
 
-  async function sendAnnouncement(item) {
-    if (!window.confirm('「' + item.title + '」 공지를 디스코드 채널로 전송할까요?')) return;
-    setSaving(true); setError(''); setNotice('');
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      if (!token) throw new Error('로그인 세션이 없습니다. 다시 로그인해 주세요.');
-      const response = await fetch('/api/discord-event-announcement', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ title: item.title, content: item.content, eventDate: item.event_date, signupDeadline: item.signup_deadline, roomName: room?.name || '백야 이벤트' }) });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.error || '디스코드 전송에 실패했습니다.');
-      const { error: updateError } = await supabase.from('event_announcements').update({ status: 'published', discord_sent_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', item.id).eq('room_id', roomId);
-      if (updateError) throw updateError;
-      setNotice('디스코드 채널로 공지를 전송했습니다.'); await load();
-    } catch (e) { setError(e.message || '디스코드 전송에 실패했습니다.'); }
-    finally { setSaving(false); }
-  }
 
   const isTournament = mode === 'tournament';
   const standings = isTournament ? Object.values(results.reduce((acc, item) => {
@@ -181,7 +165,7 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
       </div>
     </> : <>
       {!readOnly && <form className="panel admin-record-form" onSubmit={saveAnnouncement}>
-        <div className="panelhead"><div><h3>{editingAnnouncement ? '공지 수정' : '새 이벤트 공지'}</h3><p className="tiny">먼저 저장한 뒤 디스코드 전송 버튼으로 공지할 수 있습니다.</p></div>{editingAnnouncement && <button className="btn ghost" type="button" onClick={resetAnnouncement}><X size={15}/> 취소</button>}</div>
+        <div className="panelhead"><div><h3>{editingAnnouncement ? '공지 수정' : '새 이벤트 공지'}</h3><p className="tiny">이벤트 공지를 작성하고 이 방의 공지 목록으로 관리합니다.</p></div>{editingAnnouncement && <button className="btn ghost" type="button" onClick={resetAnnouncement}><X size={15}/> 취소</button>}</div>
         <div className="admin-form-grid">
           <label className="admin-form-wide">공지 제목<input value={announcementForm.title} onChange={e=>setAnnouncementForm(v=>({...v,title:e.target.value}))} placeholder="예: 백야 롤 내전 참가 모집" maxLength={150} required/></label>
           <label className="admin-form-wide">공지 내용<textarea value={announcementForm.content} onChange={e=>setAnnouncementForm(v=>({...v,content:e.target.value}))} placeholder="일정, 참여 방법, 보상 등을 입력해 주세요." rows="5" maxLength={4000} required/></label>
@@ -192,7 +176,7 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
         <div className="admin-form-actions"><button className="btn primary" type="submit" disabled={saving}><Save size={16}/>{saving ? '저장 중…' : editingAnnouncement ? '수정 저장' : '공지 저장'}</button></div>
       </form>}
       <div className="panel"><div className="panelhead"><h3>이벤트 공지 목록</h3><button type="button" className="btn ghost" onClick={load} disabled={loading}><CalendarDays size={15}/> 새로고침</button></div>
-        {loading ? <p className="muted">불러오는 중…</p> : announcements.length ? <div className="admin-record-list">{announcements.map(item=><article className="admin-record-card" key={item.id}><div className="admin-record-card-top"><span className={'pill announcement-status ' + item.status}>{item.status === 'published' ? '공지 완료' : item.status === 'closed' ? '마감' : '작성 중'}</span><span className="tiny">{new Date(item.created_at).toLocaleDateString('ko-KR')} 작성</span></div><h4>{item.title}</h4><p className="admin-announcement-content">{item.content}</p>{item.event_date && <p className="tiny">진행: {new Date(item.event_date).toLocaleString('ko-KR')}</p>}{item.signup_deadline && <p className="tiny">신청 마감: {new Date(item.signup_deadline).toLocaleString('ko-KR')}</p>}{item.discord_sent_at && <p className="admin-record-winner"><Check size={14}/> 디스코드 전송 {new Date(item.discord_sent_at).toLocaleString('ko-KR')}</p>}{!readOnly && <div className="admin-form-actions"><button className="btn ghost" type="button" disabled={saving} onClick={()=>editAnnouncement(item)}><Edit3 size={15}/> 수정</button><button className="btn primary" type="button" disabled={saving} onClick={()=>sendAnnouncement(item)}><Send size={15}/> 디스코드 전송</button><button className="btn danger" type="button" disabled={saving} onClick={()=>deleteAnnouncement(item)}><Trash2 size={15}/> 삭제</button></div>}</article>)}</div> : <div className="empty">아직 공지가 없습니다. 위에서 첫 공지를 작성해 주세요.</div>}
+        {loading ? <p className="muted">불러오는 중…</p> : announcements.length ? <div className="admin-record-list">{announcements.map(item=><article className="admin-record-card" key={item.id}><div className="admin-record-card-top"><span className={'pill announcement-status ' + item.status}>{item.status === 'published' ? '공지 완료' : item.status === 'closed' ? '마감' : '작성 중'}</span><span className="tiny">{new Date(item.created_at).toLocaleDateString('ko-KR')} 작성</span></div><h4>{item.title}</h4><p className="admin-announcement-content">{item.content}</p>{item.event_date && <p className="tiny">진행: {new Date(item.event_date).toLocaleString('ko-KR')}</p>}{item.signup_deadline && <p className="tiny">신청 마감: {new Date(item.signup_deadline).toLocaleString('ko-KR')}</p>}{!readOnly && <div className="admin-form-actions"><button className="btn ghost" type="button" disabled={saving} onClick={()=>editAnnouncement(item)}><Edit3 size={15}/> 수정</button><button className="btn danger" type="button" disabled={saving} onClick={()=>deleteAnnouncement(item)}><Trash2 size={15}/> 삭제</button></div>}</article>)}</div> : <div className="empty">아직 공지가 없습니다. 위에서 첫 공지를 작성해 주세요.</div>}
       </div>
     </>}
     {error && <div className="alert">{error}</div>}{notice && <div className="success">{notice}</div>}
