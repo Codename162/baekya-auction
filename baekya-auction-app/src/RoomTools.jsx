@@ -45,11 +45,11 @@ export default function RoomTools({ supabase, roomId, room, isAdmin }) {
     try {
       const { data, error: rpcError } = await supabase.rpc('create_room_backup', { p_room_id: roomId, p_label: label.trim() || null });
       if (rpcError) throw rpcError;
+      const { data: createdBackup, error: readError } = await supabase.from('room_backups').select('label,snapshot').eq('id', data).single();
       await load();
       setLabel('');
       setNotice('현재 방의 백업을 저장했습니다.');
-      const created = (backups || []).find(b => b.id === data);
-      if (created?.snapshot) downloadJson('baekya-room-backup-' + roomId + '.json', created.snapshot);
+      if (!readError && createdBackup?.snapshot) downloadJson('baekya-room-backup-' + roomId + '.json', createdBackup.snapshot);
     } catch (e) { setError(e.message || '백업을 만들지 못했습니다.'); }
     finally { setBusy(''); }
   }
