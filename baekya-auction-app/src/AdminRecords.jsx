@@ -41,6 +41,14 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
     setResultForm(emptyResult()); setAnnouncementForm(emptyAnnouncement()); load();
   }, [roomId, mode]);
 
+  useEffect(() => {
+    if (!supabase || !roomId || mode !== 'tournament') return;
+    const channel = supabase.channel('tournament-results-' + roomId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_results', filter: 'room_id=eq.' + roomId }, load)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [supabase, roomId, mode]);
+
   function resetResult() { setResultForm(emptyResult()); setEditingResult(null); }
   function resetAnnouncement() { setAnnouncementForm(emptyAnnouncement()); setEditingAnnouncement(null); }
 
