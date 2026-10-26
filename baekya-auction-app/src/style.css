@@ -443,3 +443,25 @@ input,select,textarea{font-size:16px}
   .profile-card-stats>div{padding:8px 5px}
   .room-tool-actions{grid-template-columns:1fr}
 }
+
+
+/* Clear separation between public player tools and admin-only controls */
+.navigation-area{display:grid;gap:14px;margin:0 0 20px}
+.navigation-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;padding:0 3px}
+.navigation-heading h3{margin:3px 0 0;font-size:16px;letter-spacing:-.02em;color:#f5f0ff}
+.navigation-heading p{margin:0;color:var(--muted);font-size:11px;text-align:right}
+.navigation-kicker{font-size:9px;font-weight:900;letter-spacing:.18em;color:#c084fc}
+.navigation-area .feature-tabs{margin:0}
+.admin-navigation{padding:15px;border:1px solid #f0abfc35;border-radius:18px;background:linear-gradient(135deg,#24112d8c,#120f25c9);box-shadow:0 12px 30px #02030d2b}
+.admin-navigation-heading{margin-bottom:12px}
+.admin-navigation-heading h3{color:#f0abfc}
+.admin-navigation-heading .navigation-kicker{color:#f0abfc}
+.admin-navigation .feature-tabs{border-color:#d946ef38;background:linear-gradient(120deg,#160f27ed,#20102af0)}
+.admin-navigation .feature-tab.active{border-color:#e879f9a0;background:linear-gradient(135deg,#62236f9c,#29133f);box-shadow:0 0 0 1px #e879f91c inset,0 0 22px #c026d31c}
+@media(max-width:600px){
+  .navigation-area{gap:12px;margin-bottom:16px}
+  .navigation-heading{align-items:flex-start;flex-direction:column;gap:4px}
+  .navigation-heading p{text-align:left}
+  .admin-navigation{padding:11px;border-radius:15px}
+  .admin-navigation .feature-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
