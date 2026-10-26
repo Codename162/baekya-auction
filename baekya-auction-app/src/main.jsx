@@ -21,7 +21,7 @@ function App() {
   const [profile, setProfile] = useState(null);
   const [room, setRoom] = useState(null);
   const [rooms, setRooms] = useState([]);
-  const [roomId, setRoomId] = useState(defaultRoomId || '');
+  const [roomId, setRoomId] = useState('');
   const [teams, setTeams] = useState([]);
   const [players, setPlayers] = useState([]);
   const [allPlayers, setAllPlayers] = useState([]);
@@ -119,7 +119,7 @@ function App() {
       if (cancelled) return;
       if (roomsError) { setError('경매방 목록을 불러오지 못했습니다: ' + roomsError.message); return; }
       setRooms(data || []);
-      if (data?.length && !data.some(r => r.id === roomId)) setRoomId(data[0].id);
+      if (data?.length && !data.some(r => r.id === roomId)) setRoomId(data.find(r => r.id === defaultRoomId)?.id || data[0].id);
     })();
     return () => { cancelled = true; };
   }, [session]);
