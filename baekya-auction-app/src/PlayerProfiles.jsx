@@ -35,6 +35,23 @@ export default function PlayerProfiles({ supabase, roomId, room, players = [], t
   const [busyId, setBusyId] = useState('');
   const [edits, setEdits] = useState({});
   const [editingId, setEditingId] = useState('');
+  const [discordAvatars, setDiscordAvatars] = useState({});
+
+  // Re-read linked Discord profile avatars periodically so profile changes appear without a manual refresh.
+  useEffect(() => {
+    let cancelled = false;
+    let timer;
+    async function loadDiscordAvatars() {
+      const userIds = [...new Set(players.map(p => p.discord_user_id).filter(Boolean))];
+      if (!supabase || !userIds.length) { setDiscordAvatars({}); return; }
+      const { data, error: avatarError } = await supabase.from('profiles').select('id,avatar_url').in('id', userIds);
+      if (cancelled || avatarError) return;
+      setDiscordAvatars(Object.fromEntries((data || []).map(profile => [profile.id, profile.avatar_url]).filter(([id, url]) => id && url)));
+    }
+    loadDiscordAvatars();
+    timer = setInterval(loadDiscordAvatars, 60000);
+    return () => { cancelled = true; if (timer) clearInterval(timer); };
+  }, [supabase, players]);
 
   useEffect(() => {
     setEdits(Object.fromEntries(players.map(p => [p.id, emptyEdit(p)])));
@@ -104,7 +121,7 @@ export default function PlayerProfiles({ supabase, roomId, room, players = [], t
       const edit = edits[player.id] || emptyEdit(player);
       return <article className="profile-card" key={player.id}>
         <div className="profile-card-top"><span className={'grade '+player.grade}>{player.grade}</span><span className="pill">{player.status==='sold'?'낙찰 완료':player.status==='auctioning'?'경매 중':player.status==='passed'?'유찰':'대기 중'}</span></div>
-        <h3>{player.name}</h3><p className="profile-team"><Users size={14}/>{player.teamName}</p>
+        <div className="profile-identity">{discordAvatars[player.discord_user_id] ? <img className="profile-discord-avatar" src={discordAvatars[player.discord_user_id]} alt={`${player.name} 디스코드 프로필 사진`} loading="lazy" referrerPolicy="no-referrer" onError={e => { e.currentTarget.style.display = 'none'; }} /> : <span className="profile-discord-avatar profile-discord-avatar-fallback" aria-hidden="true">{(player.name || '?').slice(0, 1).toUpperCase()}</span>}<div className="profile-identity-text"><h3>{player.name}</h3><p className="profile-team"><Users size={14}/>{player.teamName}</p></div></div>
         <div className="profile-game-list">
           {(Array.isArray(player.game_profiles) && player.game_profiles.length ? player.game_profiles : ((player.main_position || player.tier || (player.favorite_champions || []).length) ? [{game:'리그 오브 레전드',position:player.main_position,tier:player.tier,favorites:player.favorite_champions}] : [])).map((g, index) => <div className="profile-game-item" key={(g.game || 'game') + index}>
             <div className="profile-game-title"><strong>{g.game || '게임'}</strong>{g.tier && <span>{g.tier}</span>}</div>
