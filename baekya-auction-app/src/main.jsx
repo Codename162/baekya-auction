@@ -320,7 +320,7 @@ function App() {
     setCaptainTeamId(''); setCaptainUserId('');
   }
 
-  if (!supabase || !roomId) return <Setup />;
+  if (!supabase) return <Setup />;
   if (authLoading) return <main className="login"><div className="logo"><Orbit size={27}/></div><p className="eyebrow">BAEKYA COMMUNITY</p><h1>BAEKYA <span>AUCTION</span></h1><p className="muted lead">로그인 상태를 확인하고 있습니다…</p></main>;
   if (!session) return <main className="login"><div className="logo"><Orbit size={27}/></div><p className="eyebrow">BAEKYA COMMUNITY · LEAGUE OF LEGENDS</p><h1>BAEKYA <span>AUCTION</span></h1><p className="muted lead">팀장을 맡고, 포인트를 전략적으로 사용해<br/>우리 팀의 승리를 만들어 보세요.</p><button className="btn primary loginbtn" onClick={login}><Shield size={18}/> Discord로 로그인</button>{error && <p className="error">{error}</p>}<p className="tiny">디스코드 인증은 Supabase OAuth 설정이 완료된 뒤 작동합니다.</p></main>;
 
