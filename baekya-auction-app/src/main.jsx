@@ -268,24 +268,14 @@ function App() {
 
   async function saveGlobalGrade(discordUserId, grade) {
     if (!discordUserId || !['S','A','B','C','D'].includes(grade)) return;
-    const linkedPlayers = allPlayers.filter(player => player.discord_user_id === discordUserId && !player.is_captain);
     setBusy(true); setError(''); setNotice('');
     try {
-      const { error: profileError } = await supabase.from('profiles').update({ grade }).eq('id', discordUserId);
-      if (profileError) throw profileError;
-      const { data: roomSlidersHorizontal, error: roomsError } = await supabase.from('rooms').select('id,grade_prices');
-      if (roomsError) throw roomsError;
-      for (const player of linkedPlayers) {
-        const roomSlidersHorizontalForPlayer = roomSlidersHorizontal?.find(item => item.id === player.room_id);
-        const changes = { grade };
-        if (player.status === 'available') {
-          const prices = { ...PRICE, ...(roomSlidersHorizontalForPlayer?.grade_prices || {}) };
-          changes.start_price = Number(prices[grade] ?? PRICE[grade]);
-        }
-        const { error: updateError } = await supabase.from('players').update(changes).eq('id', player.id).eq('room_id', player.room_id);
-        if (updateError) throw updateError;
-      }
-      setNotice(linkedPlayers.length ? '멤버 기본 등급과 연결된 ' + linkedPlayers.length + '개 선수 기록을 ' + grade + '급으로 변경했습니다.' : '멤버 기본 등급을 ' + grade + '급으로 저장했습니다. 선수 등록 시 이 등급을 기준으로 사용할 수 있습니다.');
+      const { data, error: gradeError } = await supabase.rpc('set_member_global_grade', {
+        p_discord_user_id: discordUserId,
+        p_grade: grade
+      });
+      if (gradeError) throw gradeError;
+      setNotice(typeof data === 'string' ? data : '멤버 기본 등급을 변경했습니다.');
       await loadAll();
     } catch (e) {
       setError(e.message || '전체 방 등급 변경에 실패했습니다.');
