@@ -188,18 +188,6 @@ function App() {
       const {data, error} = await supabase.rpc(fn, args);
       if (error) throw error;
       setNotice(typeof data === 'string' ? data : '처리가 완료되었습니다.');
-      if (fn === 'award_current_player') {
-        const { data: latest } = await supabase.from('auction_history').select('player_name,team_name,price,grade').eq('room_id', args.p_room_id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-        if (latest) {
-          const { data: sessionData } = await supabase.auth.getSession();
-          const token = sessionData?.session?.access_token;
-          if (token) {
-            const response = await fetch('/api/discord-auction-result', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ player: latest.player_name, team: latest.team_name, price: latest.price, grade: latest.grade }) });
-            if (response.ok) setNotice((typeof data === 'string' ? data : '낙찰 확정 완료') + ' · 디스코드 결과 전송 완료');
-            else if (response.status !== 503) setNotice((typeof data === 'string' ? data : '낙찰 확정 완료') + ' · 디스코드 전송 실패(웹훅 설정 확인)');
-          }
-        }
-      }
       await loadAll();
     } catch(e) { setError(e.message || '요청 처리에 실패했습니다.'); }
     finally { setBusy(false); }
