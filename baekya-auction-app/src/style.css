@@ -263,3 +263,86 @@ footer{color:#858db0}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+
+/* NEON PURPLE GAMING ICON & CONTROL FINISH */
+:root{
+  --primary:#a855f7;
+  --secondary:#281044;
+  --baekya-neon:#c084fc;
+  --baekya-pink:#f0abfc;
+  --baekya-blue:#8b5cf6;
+}
+.moon,.logo{
+  position:relative;
+  isolation:isolate;
+  border:1px solid #e9d5ff70;
+  border-radius:14px;
+  background:linear-gradient(145deg,#f0abfc 0%,#a855f7 42%,#5b21b6 100%);
+  box-shadow:0 0 0 3px #a855f71a,0 0 18px #a855f76b,0 0 36px #7c3aed33,inset 0 1px #fff9;
+  color:#fff;
+}
+.moon::after,.logo::after{
+  content:"";position:absolute;inset:5px;border:1px solid #ffffff30;border-radius:10px;pointer-events:none;
+}
+.moon svg,.logo svg{filter:drop-shadow(0 0 5px #fff9) drop-shadow(0 0 10px #d8b4fe77)}
+.brand h1 span,.login h1 span{
+  background:linear-gradient(90deg,#f0abfc,#c084fc 48%,#8b5cf6);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.eyebrow{color:#d8b4fe;text-shadow:0 0 12px #a855f755}
+.feature-tabs{
+  border-color:#c084fc3b;
+  background:linear-gradient(120deg,#0c1023ed,#17102bf0);
+  box-shadow:0 10px 34px #02030d55,0 0 24px #9333ea12;
+}
+.feature-tab{
+  position:relative;
+  border-color:#a855f71f;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.feature-tab svg{color:#c4b5fd;filter:drop-shadow(0 0 5px #a855f755);transition:filter .18s ease,color .18s ease}
+.feature-tab:hover svg,.feature-tab.active svg{color:#f0abfc;filter:drop-shadow(0 0 7px #d8b4feaa)}
+.feature-tab.active{
+  border-color:#c084fc88;
+  background:linear-gradient(135deg,#55218a9c,#24103e);
+  box-shadow:0 0 0 1px #c084fc12 inset,0 0 20px #9333ea22;
+}
+.btn{border-color:#c084fc35;box-shadow:inset 0 1px #ffffff08}
+.btn svg{flex-shrink:0;filter:drop-shadow(0 0 4px #c084fc55)}
+.btn.primary{
+  background:linear-gradient(120deg,#c026d3,#9333ea 48%,#6d28d9);
+  border-color:#e9d5ff55;
+  box-shadow:0 0 0 1px #e9d5ff0d inset,0 5px 20px #9333ea35,0 0 20px #a855f718;
+}
+.btn.primary:hover:not(:disabled){box-shadow:0 0 0 1px #e9d5ff22 inset,0 8px 28px #9333ea55,0 0 24px #c084fc26}
+.btn.ghost:hover:not(:disabled){border-color:#c084fc77;background:#a855f71a}
+.btn.danger{border-color:#fb718555;box-shadow:0 0 18px #e11d4810}
+.pill,.status{border-color:#c084fc35;background:linear-gradient(120deg,#a855f70c,#ffffff05);color:#e9ddff}
+.status.live{border-color:#4ade8055;box-shadow:0 0 16px #4ade8010}
+.stat-icon,.panelhead>svg{color:#c4b5fd;filter:drop-shadow(0 0 6px #a855f755)}
+.auction{border-color:#c084fc7a;background:linear-gradient(130deg,#35135e 0%,#21133e 47%,#10162b 100%);box-shadow:0 18px 45px #05020d88,0 0 26px #9333ea1b,inset 0 1px #ffffff17}
+.auction-live .auction-ambient{background:conic-gradient(from 0deg,transparent,#e879f91c,transparent,#8b5cf61d,transparent)}
+.auction-countdown.urgent{color:#f0abfc;text-shadow:0 0 14px #d946ef99,0 0 26px #a855f755}
+.auction-ending{border-color:#e879f9a0;box-shadow:0 0 0 1px #e879f922,0 0 35px #c026d333,0 18px 42px #07051366}
+.bid-next{background:linear-gradient(130deg,#351557,#1b1638);border-color:#c084fc77;box-shadow:0 0 20px #9333ea12,inset 0 1px #ffffff0d}
+.bid-next strong,.winning{color:#e9d5ff;text-shadow:0 0 14px #a855f744}
+.avatar{border-color:#c084fc3a;box-shadow:0 0 18px #9333ea12}
+.grade{box-shadow:0 0 12px #a855f70c}
+input:focus,select:focus,textarea:focus{border-color:#c084fc!important;box-shadow:0 0 0 3px #a855f729,0 0 16px #9333ea13}
+.login,.setup{border-color:#c084fc40;background:linear-gradient(145deg,#17122deF,#0c1224f5);box-shadow:0 24px 90px #02040e66,0 0 40px #9333ea10}
+.loginbtn{box-shadow:0 10px 32px #9333ea3d,0 0 22px #a855f71a}
+@media(max-width:600px){
+  .brand{gap:9px;min-width:0}
+  .brand h1{font-size:15px;letter-spacing:.06em}
+  .brand p{font-size:9px}
+  .moon{width:40px;height:40px;border-radius:13px;flex-shrink:0}
+  .head-actions{gap:6px}
+  .head-actions .btn{padding:9px 10px;min-width:38px}
+  .feature-tab{min-width:86px}
+  .feature-tab svg{width:18px;height:18px}
+  .btn{min-height:40px}
+}
+@media(prefers-reduced-motion:reduce){
+  .feature-tab,.feature-tab svg,.btn{transition:none!important}
+}
