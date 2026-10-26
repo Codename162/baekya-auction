@@ -149,3 +149,117 @@ img,svg{max-width:100%}
 @media(max-width:600px){.room-management .adminform{grid-template-columns:minmax(0,1fr)}.room-management .playerrow{flex-wrap:wrap}.room-management .playerrow .grow{flex-basis:100%}}
 
 .auction-insights{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}.auction-insights .stat{min-width:0}.auction-insights .stat strong{overflow-wrap:anywhere}.team-roster-cards{display:grid;gap:6px;margin-top:8px}.roster-card{display:flex;align-items:center;gap:8px;padding:8px;border:1px solid #ffffff12;background:#ffffff04;border-radius:9px}.roster-card>div{flex:1;min-width:0}.roster-card strong{display:block;font-size:12px;overflow-wrap:anywhere}.roster-card small{display:block;color:var(--muted);font-size:10px;margin-top:2px}.roster-card>b{font-size:11px;color:#d4cdff;white-space:nowrap}.grade.TL{color:#f5d58a;background:#59471f;border-radius:8px;display:grid;place-items:center;width:29px;height:29px;font-size:10px;font-weight:900}.btn.danger{background:#57263a;border-color:#9c4764;color:#ffe1eb}@media(max-width:650px){.auction-insights{grid-template-columns:repeat(2,minmax(0,1fr))}.roster-card{padding:7px}.roster-card>b{font-size:10px}}
+
+
+/* BAEKYA DREAM UI — global navy / violet visual system */
+:root{
+  color-scheme:dark;
+  --bg:#070b18;
+  --panel:#11182c;
+  --panel2:#0d1427;
+  --border:#a9a2ff22;
+  --muted:#a6afce;
+  --primary:#8067f5;
+  --secondary:#211b48;
+  --baekya-lilac:#d8ceff;
+  --baekya-glow:#9c84ff;
+}
+html{scroll-behavior:smooth}
+body{
+  background:
+    radial-gradient(ellipse at 12% 2%,#27205280 0,transparent 33%),
+    radial-gradient(ellipse at 92% 18%,#25265b66 0,transparent 29%),
+    radial-gradient(ellipse at 48% 100%,#15183c88 0,transparent 42%),
+    var(--bg);
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.38;
+  background-image:radial-gradient(1px 1px at 14% 21%,#e6dcff 99%,transparent),radial-gradient(1px 1px at 78% 13%,#c6b7ff 99%,transparent),radial-gradient(1.5px 1.5px at 66% 71%,#fff 99%,transparent),radial-gradient(1px 1px at 31% 83%,#b7a6ff 99%,transparent),radial-gradient(1px 1px at 90% 56%,#fff 99%,transparent);
+  background-size:370px 310px,420px 360px,510px 430px,440px 390px,560px 480px;
+}
+header{
+  background:linear-gradient(110deg,#090e20f2,#11142af0 58%,#171333f2);
+  border-bottom-color:#b6a7ff24;
+  box-shadow:0 12px 42px #03061155;
+}
+.moon,.logo{
+  background:linear-gradient(145deg,#b2a0ff 0%,#7555e8 48%,#3a2b79 100%);
+  box-shadow:0 0 0 1px #e3dbff2b inset,0 8px 30px #7658f355,0 0 26px #8067f522;
+}
+.brand h1{letter-spacing:.105em}
+.brand h1 span,.login h1 span{background:linear-gradient(90deg,#cfc2ff,#9180ff 55%,#e3d9ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.main{max-width:1500px;margin:0 auto}
+.hero{padding:clamp(18px,3vw,30px);border:1px solid #b7a8ff20;border-radius:24px;background:linear-gradient(115deg,#151a35d9,#111629b8 62%,#211945a8);box-shadow:0 18px 60px #02040e30;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;width:250px;height:250px;right:-110px;top:-140px;border-radius:50%;background:#8970ff19;filter:blur(4px);pointer-events:none}
+.hero h2{background:linear-gradient(95deg,#fff 5%,#dcd4ff 60%,#a89aff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.status{box-shadow:0 0 20px #8674ff0b}
+.status.live{background:#16463544;box-shadow:0 0 22px #64e8b122}
+.feature-tabs{background:#0b1022d9;border-color:#a89bff25;box-shadow:0 12px 36px #03061124;backdrop-filter:blur(14px)}
+.feature-tab{transition:transform .2s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease}
+.feature-tab:hover{transform:translateY(-2px);background:#8d7aff0d}
+.feature-tab.active{background:linear-gradient(135deg,#45327c,#211c46 75%);border-color:#c4b4ff58;box-shadow:0 7px 26px #7054e526,inset 0 1px #ffffff14}
+.stat,.panel,.team,.spectator-event,.admin-record-card,.profile-card,.balance-score-list,.balance-team-list{
+  border-color:#a99cff24;
+  background:linear-gradient(145deg,#151d35f2,#0e1528f5 76%);
+  box-shadow:0 12px 32px #02040e20,inset 0 1px #ffffff06;
+}
+.stat,.panel,.team,.profile-card,.admin-record-card,.spectator-event{transition:border-color .2s ease,box-shadow .2s ease,transform .2s ease}
+.stat:hover,.team:hover,.profile-card:hover,.admin-record-card:hover,.spectator-event:hover{border-color:#aa98ff52;box-shadow:0 15px 36px #02040e38,0 0 24px #8067f50b}
+.stat-icon{color:#b8aaff}
+.panelhead{gap:12px}
+.btn{transition:transform .18s ease,filter .18s ease,box-shadow .18s ease,border-color .18s ease}
+.btn:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(135deg,#927bff,#6948dc);box-shadow:0 7px 22px #7758e52b,inset 0 1px #ffffff2b}
+.btn.primary:hover:not(:disabled){box-shadow:0 9px 28px #8968ff52}
+.btn.ghost{border-color:#b1a4ff22}
+.btn.danger{background:linear-gradient(135deg,#55283f,#321b35);border-color:#c15d8b55}
+.pill{border-color:#b4a6ff24;background:#a292ff0b}
+input:focus,select:focus,textarea:focus{border-color:#a596ff!important;box-shadow:0 0 0 3px #8b73ff1d}
+.auction{
+  position:relative;isolation:isolate;overflow:hidden;
+  background:linear-gradient(130deg,#30245f 0%,#191a3a 54%,#10172c 100%);
+  border-color:#b5a2ff55;
+  box-shadow:0 18px 42px #07051355,inset 0 1px #ffffff14;
+}
+.auction-live .auction-ambient{position:absolute;z-index:-1;inset:-45%;pointer-events:none;opacity:.38;background:conic-gradient(from 0deg,transparent,#a58aff18,transparent,#8b7aff16,transparent);animation:baekya-orbit 18s linear infinite}
+.auction-live .playerhead,.auction-live .price,.auction-live .bid-controls,.auction-live>.btn,.auction-live>.tiny{position:relative}
+.auction-countdown{display:inline-flex;align-items:baseline;gap:4px;font-variant-numeric:tabular-nums;text-shadow:0 0 20px #a18cff55;transition:color .2s ease}
+.auction-countdown small{font-size:.48em;color:#c7bcff}
+.auction-countdown.urgent{color:#ffb9d2;animation:baekya-countdown .85s ease-in-out infinite}
+.auction-ending{border-color:#e78dbb77;box-shadow:0 0 0 1px #e78dbb20,0 0 34px #c35d9a20,0 18px 42px #07051355}
+.bid-next{background:linear-gradient(130deg,#2c2253,#191832);border-color:#a795ff60;box-shadow:inset 0 1px #ffffff0a}
+.bid-next strong{color:#e4dcff;text-shadow:0 0 18px #a08cff42}
+.auction-celebration{
+  position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;
+  background:radial-gradient(ellipse at center,#30215ddf 0%,#0a0c1bf2 64%,#050713f7 100%);
+  backdrop-filter:blur(10px);animation:baekya-fade-in .25s ease-out both;overflow:hidden;
+}
+.auction-celebration::before,.auction-celebration::after{content:"";position:absolute;width:70vmax;height:70vmax;border-radius:50%;border:1px solid #c8b6ff25;box-shadow:0 0 70px #8a6cff10,inset 0 0 70px #8a6cff0b;animation:baekya-ring 3s ease-out infinite}
+.auction-celebration::after{width:48vmax;height:48vmax;animation-delay:.45s}
+.celebration-orb{display:grid;place-items:center;width:88px;height:88px;border-radius:28px;color:#fff;background:linear-gradient(145deg,#b5a2ff,#6c4bdd 70%,#3e2a86);box-shadow:0 0 0 8px #a38aff10,0 0 65px #a58aff65,inset 0 1px #ffffff80;animation:baekya-trophy .8s cubic-bezier(.16,1,.3,1) both}
+.auction-celebration>p{margin:28px 0 6px;font-size:10px;font-weight:900;letter-spacing:.28em;color:#c6baff}
+.auction-celebration h2{font-size:clamp(34px,8vw,64px);margin:0;background:linear-gradient(100deg,#fff,#d7caff,#a996ff);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 30px #a18cff18;animation:baekya-rise .55s .08s both}
+.auction-celebration>span{margin-top:12px;color:#c2c6e2;font-size:13px}
+.celebration-stars{margin-top:28px;color:#d6caff;letter-spacing:.25em;text-shadow:0 0 22px #b4a0ff;animation:baekya-twinkle 1.4s ease-in-out infinite alternate}
+.alert{border:1px solid #f58bb344}.success{border:1px solid #79e6c344;box-shadow:0 0 24px #57d9a00b}
+.login,.setup{position:relative;border:1px solid #b5a6ff22;border-radius:28px;background:linear-gradient(145deg,#141a32ed,#0c1224f2);box-shadow:0 24px 90px #02040e55;padding:clamp(24px,5vw,44px)}
+.login .logo{width:62px;height:62px;border-radius:21px}
+.loginbtn{box-shadow:0 12px 30px #7758e52b}
+footer{color:#858db0}
+@keyframes baekya-orbit{to{transform:rotate(360deg)}}
+@keyframes baekya-countdown{0%,100%{transform:scale(1);text-shadow:0 0 10px #ff8bb455}50%{transform:scale(1.08);text-shadow:0 0 25px #ff8bb499}}
+@keyframes baekya-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes baekya-ring{0%{transform:scale(.65);opacity:0}35%{opacity:.7}100%{transform:scale(1.18);opacity:0}}
+@keyframes baekya-trophy{0%{transform:translateY(22px) scale(.72) rotate(-8deg);opacity:0}70%{transform:translateY(-4px) scale(1.06) rotate(2deg)}100%{transform:translateY(0) scale(1);opacity:1}}
+@keyframes baekya-rise{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes baekya-twinkle{from{opacity:.5;transform:scale(.96)}to{opacity:1;transform:scale(1.04)}}
+@media(max-width:600px){
+  header{backdrop-filter:blur(18px)}
+  .hero{padding:18px;border-radius:18px}
+  .stat,.panel{box-shadow:0 8px 24px #02040e20,inset 0 1px #ffffff06}
+  .auction-live .playerhead{align-items:center}
+  .auction-celebration>span{max-width:270px;line-height:1.7}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
