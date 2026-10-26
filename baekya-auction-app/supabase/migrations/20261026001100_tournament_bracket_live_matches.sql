@@ -23,3 +23,10 @@ drop policy if exists "room admins update tournament matches" on public.tourname
 create policy "room admins update tournament matches" on public.tournament_matches for update to authenticated using(public.is_room_admin(room_id)) with check(public.is_room_admin(room_id));
 drop policy if exists "room admins delete tournament matches" on public.tournament_matches;
 create policy "room admins delete tournament matches" on public.tournament_matches for delete to authenticated using(public.is_room_admin(room_id));
+
+do $$ begin
+ if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='tournament_matches') then
+  alter publication supabase_realtime add table public.tournament_matches;
+ end if;
+end $$;
+grant select,insert,update,delete on public.tournament_matches to authenticated;
