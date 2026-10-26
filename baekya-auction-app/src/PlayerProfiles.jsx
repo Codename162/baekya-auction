@@ -2,8 +2,19 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Search, Trophy, Gavel, Users, Medal, Save, Swords } from 'lucide-react';
 import './PlayerProfiles.css';
 
-const GAME_OPTIONS = ['리그 오브 레전드', '발로란트', '오버워치 2', '에이펙스 레전드', '배틀그라운드', '와일드 리프트', '이터널 리턴', '마인크래프트', '기타'];
+const GAME_OPTIONS = ['리그 오브 레전드', '발로란트', '오버워치 2', '에이펙스 레전드', '배틀그라운드', '이터널 리턴', '기타'];
 const blankGame = game => ({ game, position: '', tier: '', favorites: '', notes: '' });
+const GAME_EXAMPLES = {
+  '리그 오브 레전드': ['미드, 정글, 탑, 원딜, 서포터', '에메랄드 2, 다이아몬드 4, 마스터', '아리, 야스오, 리 신', '주로 미드 라인에서 플레이합니다.'],
+  '발로란트': ['타격대, 척후대, 감시자, 전략가', '실버 2, 다이아몬드, 초월자', '제트, 레이나, 소바', '타격대 역할과 엔트리 진입을 선호합니다.'],
+  '오버워치 2': ['돌격, 공격, 지원', '골드 3, 다이아몬드, 마스터', '디바, 트레이서, 아나', '주 포지션과 자주 플레이하는 영웅을 적어 주세요.'],
+  '에이펙스 레전드': ['교전 담당, 정찰, 지원', '골드, 플래티넘, 다이아몬드, 마스터', '레이스, 호라이즌, 블러드하운드', '주 무기나 교전 스타일을 적어 주세요.'],
+  '배틀그라운드': ['오더, 엔트리, 저격, 서포트', '경쟁전 티어', 'M416, 베릴, AWM', '선호 맵이나 팀 역할을 적어 주세요.'],
+  '이터널 리턴': ['딜러, 탱커, 서포터', '브론즈, 골드, 플래티넘, 데미갓', '실비아, 아비게일, 재키', '주 실험체와 선호 무기군을 적어 주세요.'],
+  '기타': ['주 역할 또는 플레이 스타일', '랭크 / 등급 (없으면 비워 두기)', '좋아하는 캐릭터, 무기, 직업 등', '게임 내 강점이나 소개하고 싶은 내용을 적어 주세요.']
+};
+const gameExample = (game, index) => (GAME_EXAMPLES[game] || GAME_EXAMPLES['기타'])[index];
+
 const emptyEdit = p => {
   const saved = Array.isArray(p.game_profiles) ? p.game_profiles : [];
   const games = saved.length ? saved.map(g => ({ ...blankGame(g.game || '기타'), ...g, favorites: Array.isArray(g.favorites) ? g.favorites.join(', ') : (g.favorites || '') })) : (
@@ -115,10 +126,10 @@ export default function PlayerProfiles({ supabase, roomId, room, players = [], t
             {(edit.games || []).map((gameProfile, gameIndex) => <div className="profile-game-editor" key={gameIndex}>
               <div className="profile-game-editor-top"><strong>게임 프로필 {gameIndex + 1}</strong><button className="btn danger" type="button" onClick={() => setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.filter((_,i)=>i!==gameIndex)}}))}>삭제</button></div>
               <label className="field">게임<select value={gameProfile.game} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,game:e.target.value}:g)}}))}>{[...new Set([...GAME_OPTIONS,gameProfile.game].filter(Boolean))].map(g=><option key={g} value={g}>{g}</option>)}</select></label>
-              <label className="field">주 포지션 / 역할<input maxLength="80" value={gameProfile.position || ''} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,position:e.target.value}:g)}}))} placeholder="예: 미드, 정글, 듀얼리스트, 서포트"/></label>
-              <label className="field">티어 / 랭크<input maxLength="80" value={gameProfile.tier || ''} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,tier:e.target.value}:g)}}))} placeholder="예: 다이아몬드, 불멸, 마스터"/></label>
-              <label className="field">선호 캐릭터 / 요원 (쉼표로 구분)<input maxLength="500" value={gameProfile.favorites || ''} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,favorites:e.target.value}:g)}}))} placeholder="예: 아리, 제트, 겐지"/></label>
-              <label className="field">추가 소개<textarea maxLength="240" rows="2" value={gameProfile.notes || ''} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,notes:e.target.value}:g)}}))} placeholder="선호 포지션, 플레이 스타일 등"/></label>
+              <label className="field">주 포지션 / 역할<input maxLength="80" value={gameProfile.position || ''} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,position:e.target.value}:g)}}))} placeholder={'예: ' + gameExample(gameProfile.game, 0)}/></label>
+              <label className="field">티어 / 랭크<input maxLength="80" value={gameProfile.tier || ''} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,tier:e.target.value}:g)}}))} placeholder={'예: ' + gameExample(gameProfile.game, 1)}/></label>
+              <label className="field">{gameProfile.game === '발로란트' ? '선호 요원' : gameProfile.game === '배틀그라운드' ? '선호 무기' : gameProfile.game === '마인크래프트' ? '선호 콘텐츠' : '선호 캐릭터'} (쉼표로 구분<input maxLength="500" value={gameProfile.favorites || ''} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,favorites:e.target.value}:g)}}))} placeholder={'예: ' + gameExample(gameProfile.game, 2)}/></label>
+              <label className="field">추가 소개<textarea maxLength="240" rows="2" value={gameProfile.notes || ''} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,notes:e.target.value}:g)}}))} placeholder={'예: ' + gameExample(gameProfile.game, 3)}/></label>
             </div>)}
             {!edit.games?.length && <p className="tiny">등록할 게임이 없습니다. ‘게임 추가’를 눌러 프로필을 만들어 주세요.</p>}
             <div className="profile-edit-actions"><button className="btn primary" type="button" disabled={busyId===player.id} onClick={()=>saveProfile(player)}><Save size={14}/>{busyId===player.id?'저장 중…':'프로필 저장'}</button><button className="btn ghost" type="button" onClick={()=>setEditingId('')}>취소</button></div>
