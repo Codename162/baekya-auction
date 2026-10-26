@@ -402,3 +402,44 @@ input:focus,select:focus,textarea:focus{border-color:#c084fc!important;box-shado
 .room-selection-panel .room-selection-status.running{color:#a7f3d0;border-color:#34d39955;background:#064e3b44}
 .room-selection-panel .room-selection-empty{padding:18px 10px;text-align:center;border:1px dashed #c084fc35;border-radius:11px;color:#aab2d1;font-size:12px}
 @media(max-width:650px){.room-selection-panel .room-selection-groups{grid-template-columns:minmax(0,1fr)}.room-selection-panel .room-selection-card{padding:10px;gap:8px}.room-selection-panel .room-selection-card-icon{width:32px;height:32px}.room-selection-panel .room-selection-status{font-size:9px;padding:4px 6px}}
+
+/* Mobile usability pass: thumb-friendly controls, safe widths, and compact admin lists */
+button,.btn,.feature-tab,.room-selection-card{touch-action:manipulation}
+input,select,textarea{font-size:16px}
+@media(max-width:600px){
+  .main{padding:14px 10px 28px}
+  header{padding:12px 12px;gap:10px}
+  .brand h1{font-size:16px}
+  .brand p{font-size:10px}
+  .head-actions{width:100%;gap:6px}
+  .head-actions>.pill{max-width:100%;overflow-wrap:anywhere}
+  .head-actions>.btn{min-height:42px}
+  .feature-tabs{grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}
+  .feature-tab{min-height:70px}
+  .stats{gap:8px}
+  .stat{min-width:0;padding:11px}
+  .stat strong{font-size:20px}
+  .panelhead{align-items:flex-start;flex-wrap:wrap}
+  .panelhead>.btn{min-height:40px}
+  .btn{min-height:42px;padding:10px 12px}
+  .field input,.field select,.field textarea{min-height:44px}
+  .adminform .field{min-width:0}
+  .playerrow,.nickname-editor{flex-wrap:wrap}
+  .nickname-editor input{min-width:120px}
+  .room-selection-card{padding:12px;gap:8px}
+  .room-selection-card-info{min-width:0}
+  .room-selection-card-info strong{overflow-wrap:anywhere}
+  .bid-controls{grid-template-columns:1fr}
+  .balance-player{gap:7px}
+  .score-input input{width:68px;min-height:42px}
+  .spectator-create,.spectator-event{padding:12px}
+  .spectator-admin-actions .btn,.prediction-form .btn{width:100%;min-height:44px}
+}
+@media(max-width:380px){
+  .feature-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dashboard-grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .profile-card-stats{gap:5px}
+  .profile-card-stats>div{padding:8px 5px}
+  .room-tool-actions{grid-template-columns:1fr}
+}
