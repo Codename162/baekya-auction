@@ -129,6 +129,7 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
     finally { setSaving(false); }
   }
 
+  const isTournament = mode === 'tournament';
   const standings = isTournament ? Object.values(results.reduce((acc, item) => {
     [item.team_a, item.team_b].filter(Boolean).forEach(name => {
       if (!acc[name]) acc[name] = { name, played: 0, wins: 0, draws: 0, losses: 0, pointsFor: 0, pointsAgainst: 0, mvps: 0 };
@@ -143,7 +144,6 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
     return acc;
   }, {})).filter(team => !team.name.startsWith('__mvp__')).sort((a,b) => b.wins-a.wins || b.draws-a.draws || (b.pointsFor-b.pointsAgainst)-(a.pointsFor-a.pointsAgainst)) : [];
   const mvpLeaders = isTournament ? Object.entries(results.reduce((acc, item) => { const name=(item.mvp||'').trim(); if(name) acc[name]=(acc[name]||0)+1; return acc; }, {})).sort((a,b)=>b[1]-a[1]).slice(0,5) : [];
-  const isTournament = mode === 'tournament';
   return <section className="admin-records">
     <div className="admin-records-heading"><div className="admin-records-icon">{isTournament ? <Trophy size={22}/> : <Megaphone size={22}/>}</div><div><h3>{isTournament ? '대회 전적 관리' : '이벤트 공지 관리'}</h3><p className="tiny">관리 대상 경매방: {room?.name || '미선택'} · {readOnly ? '멤버 열람' : '관리자 전용'}</p></div><span className="pill">{isTournament ? results.length + '개 기록' : announcements.length + '개 공지'}</span></div>
     {isTournament && results.length > 0 && <div className="tournament-overview">
