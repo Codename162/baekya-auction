@@ -346,3 +346,16 @@ input:focus,select:focus,textarea:focus{border-color:#c084fc!important;box-shado
 @media(prefers-reduced-motion:reduce){
   .feature-tab,.feature-tab svg,.btn{transition:none!important}
 }
+
+/* Auction progress dashboard and roster capacity */
+.auction-progress-panel{margin-bottom:15px;padding:18px;border:1px solid #8c7dff35;border-radius:16px;background:linear-gradient(145deg,#171d38,#11172a)}
+.auction-progress-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.auction-progress-metrics>div{display:grid;gap:5px;padding:12px;border:1px solid var(--border);background:#0c1223;border-radius:12px}
+.auction-progress-metrics small,.auction-progress-foot{font-size:11px;color:var(--muted)}
+.auction-progress-metrics strong{font-size:22px;letter-spacing:-.04em}
+.auction-progress-track{height:8px;border-radius:99px;background:#252d47;overflow:hidden;margin-top:15px}
+.auction-progress-track span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#7768ef,#c18cff);box-shadow:0 0 16px #8b72ff66;transition:width .25s ease}
+.auction-progress-foot{display:flex;justify-content:space-between;gap:8px;margin-top:8px}.auction-progress-foot strong,.roster-capacity strong{color:#dcd7ff}
+.roster-capacity{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0;font-size:11px;color:var(--muted)}
+.roster-capacity span:last-child{padding:4px 7px;border:1px solid #8b7dff33;border-radius:99px;background:#7b68ee12}
+@media(max-width:520px){.auction-progress-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.auction-progress-metrics strong{font-size:19px}}
