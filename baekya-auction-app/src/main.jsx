@@ -77,7 +77,9 @@ function App() {
   }
 
   useEffect(() => {
-    if (!session || !activeSection) return;
+    // Keep the PLAYER SPACE navigation visible on initial login. Only scroll
+    // to the workspace after the user chooses a specific feature.
+    if (!session || !activeSection || activeSection === 'dashboard') return;
     const timer = window.setTimeout(() => {
       document.getElementById('section-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 60);
