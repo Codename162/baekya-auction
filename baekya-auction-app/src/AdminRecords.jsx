@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CalendarDays, Check, Edit3, Megaphone, Save, Send, Trash2, Trophy, X } from 'lucide-react';
+import { CalendarDays, Check, Edit3, Megaphone, Save, Send, Trash2, Trophy, X, Medal } from 'lucide-react';
 import './AdminRecords.css';
 
 const dateOnly = () => new Date().toLocaleDateString('en-CA');
@@ -121,9 +121,38 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
     finally { setSaving(false); }
   }
 
+  const standings = isTournament ? Object.values(results.reduce((acc, item) => {
+    [item.team_a, item.team_b].filter(Boolean).forEach(name => {
+      if (!acc[name]) acc[name] = { name, played: 0, wins: 0, draws: 0, losses: 0, pointsFor: 0, pointsAgainst: 0, mvps: 0 };
+      acc[name].played += 1;
+      acc[name].mvps += item.mvp ? 0 : 0;
+    });
+    if (item.team_a && acc[item.team_a]) { acc[item.team_a].pointsFor += Number(item.score_a || 0); acc[item.team_a].pointsAgainst += Number(item.score_b || 0); }
+    if (item.team_b && acc[item.team_b]) { acc[item.team_b].pointsFor += Number(item.score_b || 0); acc[item.team_b].pointsAgainst += Number(item.score_a || 0); }
+    if (item.winner === '무승부') { if (acc[item.team_a]) acc[item.team_a].draws += 1; if (acc[item.team_b]) acc[item.team_b].draws += 1; }
+    else if (item.winner && acc[item.winner]) { acc[item.winner].wins += 1; const loser = item.winner === item.team_a ? item.team_b : item.team_a; if (acc[loser]) acc[loser].losses += 1; }
+    if (item.mvp) { const key = item.mvp.trim(); if (key) { if (!acc['__mvp__'+key]) acc['__mvp__'+key] = { name: '__mvp__'+key, mvps: 0 }; acc['__mvp__'+key].mvps += 1; } }
+    return acc;
+  }, {})).filter(team => !team.name.startsWith('__mvp__')).sort((a,b) => b.wins-a.wins || b.draws-a.draws || (b.pointsFor-b.pointsAgainst)-(a.pointsFor-a.pointsAgainst)) : [];
+  const mvpLeaders = isTournament ? Object.entries(results.reduce((acc, item) => { const name=(item.mvp||'').trim(); if(name) acc[name]=(acc[name]||0)+1; return acc; }, {})).sort((a,b)=>b[1]-a[1]).slice(0,5) : [];
   const isTournament = mode === 'tournament';
   return <section className="admin-records">
     <div className="admin-records-heading"><div className="admin-records-icon">{isTournament ? <Trophy size={22}/> : <Megaphone size={22}/>}</div><div><h3>{isTournament ? '대회 전적 관리' : '이벤트 공지 관리'}</h3><p className="tiny">관리 대상 경매방: {room?.name || '미선택'} · {readOnly ? '멤버 열람' : '관리자 전용'}</p></div><span className="pill">{isTournament ? results.length + '개 기록' : announcements.length + '개 공지'}</span></div>
+    {isTournament && results.length > 0 && <div className="tournament-overview">
+      <div className="tournament-summary-grid">
+        <div className="stat"><small>등록 경기</small><strong>{results.length}</strong><span>현재 방 기준</span></div>
+        <div className="stat"><small>참가 팀</small><strong>{standings.length}</strong><span>기록에 등장한 팀</span></div>
+        <div className="stat"><small>등록 MVP</small><strong>{results.filter(r=>r.mvp && r.mvp.trim()).length}</strong><span>MVP가 기록된 경기</span></div>
+      </div>
+      <div className="tournament-leaderboards">
+        <div className="panel"><div className="panelhead"><h3><Trophy size={17}/> 팀 순위</h3><span className="pill">승수 우선</span></div>
+          {standings.length ? <div className="playerlist">{standings.map((team,i)=><div className="playerrow" key={team.name}><span className="pill">#{i+1}</span><div className="grow"><strong>{team.name}</strong><small>{team.played}경기 · {team.wins}승 {team.draws}무 {team.losses}패 · 득실 {team.pointsFor-team.pointsAgainst > 0 ? '+' : ''}{team.pointsFor-team.pointsAgainst}</small></div><strong className="winning">{team.wins*3+team.draws}점</strong></div>)}</div> : <div className="empty">순위 데이터가 없습니다.</div>}
+        </div>
+        <div className="panel"><div className="panelhead"><h3><Medal size={17}/> MVP 순위</h3><span className="pill">상위 5명</span></div>
+          {mvpLeaders.length ? <div className="playerlist">{mvpLeaders.map(([name,count],i)=><div className="playerrow" key={name}><span className="pill">#{i+1}</span><div className="grow"><strong>{name}</strong><small>대회 MVP 선정</small></div><strong className="winning">{count}회</strong></div>)}</div> : <div className="empty">아직 MVP 기록이 없습니다.</div>}
+        </div>
+      </div>
+    </div>}
     {isTournament ? <>
       {!readOnly && <form className="panel admin-record-form" onSubmit={saveResult}>
         <div className="panelhead"><div><h3>{editingResult ? '전적 수정' : '전적 등록'}</h3><p className="tiny">경기 결과와 MVP를 저장하면 아래 기록에 반영됩니다.</p></div>{editingResult && <button className="btn ghost" type="button" onClick={resetResult}><X size={15}/> 취소</button>}</div>
