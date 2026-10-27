@@ -72,8 +72,10 @@ function App() {
   const highestBid = bids.filter(b => b.player_id === currentPlayer?.id).sort((a,b) => b.amount-a.amount || new Date(b.created_at)-new Date(a.created_at))[0] || null;
   const currentPrice = highestBid?.amount ?? currentPlayer?.start_price ?? null;
   const auctionDeadline = room?.current_player_id ? new Date((room.highest_team_id && room.last_bid_at ? room.last_bid_at : room.auction_started_at || new Date().toISOString())).getTime() + (room.highest_team_id && room.last_bid_at ? 5000 : 40000) : null;
-  const auctionSecondsLeft = room?.status === 'paused' && room?.paused_remaining_seconds != null
-    ? Math.max(0, Number(room.paused_remaining_seconds))
+  const auctionSecondsLeft = room?.status === 'paused'
+    ? Math.max(0, Number(room.paused_remaining_seconds ?? (room.paused_at && auctionDeadline
+        ? Math.ceil((auctionDeadline - new Date(room.paused_at).getTime()) / 1000)
+        : 0)))
     : auctionDeadline ? Math.max(0, Math.ceil((auctionDeadline - timerNow) / 1000)) : 0;
   const activePlayers = players.filter(p => !p.is_captain && p.status === 'available');
 
