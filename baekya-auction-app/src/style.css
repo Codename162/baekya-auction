@@ -616,3 +616,15 @@ footer{border-top:1px solid #ffffff10;margin-top:30px;padding-top:22px;letter-sp
 @keyframes trophy-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 @media(max-width:760px){.squad-power-grid{grid-template-columns:1fr}.squad-power-card{padding:15px}.champion-spotlight{padding:24px 12px 18px}}
 @media(prefers-reduced-motion:reduce){.champion-ceremony,.champion-trophy{animation:none!important}}
+
+/* Independent feature routes and role-aware navigation */
+.main:not(.section-dashboard)>.stats{display:none}
+.navigation-area{position:relative}
+.navigation-area .feature-tabs{align-items:stretch}
+.feature-tab{min-width:0}
+.feature-tab span,.feature-tab small{overflow-wrap:anywhere}
+.admin-navigation{margin-top:18px;padding-top:16px;border-top:1px solid #ffffff12}
+.admin-navigation-heading{margin-bottom:10px}
+.section-workspace{min-height:36vh}
+@media(min-width:1000px){.public-feature-tabs,.admin-feature-tabs{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}}
+@media(max-width:600px){.public-feature-tabs,.admin-feature-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.feature-tab{min-height:68px}.navigation-heading p{max-width:100%}}

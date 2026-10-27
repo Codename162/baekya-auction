@@ -17,6 +17,17 @@ const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const defaultRoomId = import.meta.env.VITE_ROOM_ID;
 const supabase = url && anon ? createClient(url, anon) : null;
 const PRICE = { S: 8, A: 6, B: 4, C: 3, D: 1 };
+const SECTION_PATHS = {
+  dashboard: '/dashboard', profiles: '/players', tournament: '/results',
+  bracket: '/bracket', auction: '/auction', balance: '/team-balance',
+  events: '/events', members: '/admin/members',
+  announcements: '/admin/announcements', tools: '/admin/tools',
+  rooms: '/admin/rooms', ops: '/admin/operations'
+};
+const PATH_SECTIONS = Object.fromEntries(Object.entries(SECTION_PATHS).map(([section, path]) => [path, section]));
+function sectionFromPath(pathname = window.location.pathname) {
+  return PATH_SECTIONS[pathname.replace(/\/+$/, '') || '/'] || 'dashboard';
+};
 
 function App() {
   const [session, setSession] = useState(null);
@@ -37,7 +48,7 @@ function App() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [showAdmin, setShowAdmin] = useState(false);
-  const [activeSection, setActiveSection] = useState('dashboard');
+  const [activeSection, setActiveSection] = useState(() => sectionFromPath());
   const [bidIncrement, setBidIncrement] = useState(1);
   const [gradePrices, setGradePrices] = useState({ ...PRICE });
   const [budgetInputs, setBudgetInputs] = useState({});
@@ -63,18 +74,42 @@ function App() {
   const activePlayers = players.filter(p => !p.is_captain && p.status === 'available');
 
   function navigateSection(section, targetRoomId = null) {
-    if (section === 'auction' || section === 'balance') {
-      const roomType = section === 'balance' ? 'balance' : 'auction';
+    const nextSection = SECTION_PATHS[section] ? section : 'dashboard';
+    if (nextSection === 'auction' || nextSection === 'balance') {
+      const roomType = nextSection === 'balance' ? 'balance' : 'auction';
       const requested = targetRoomId ? rooms.find(r => r.id === targetRoomId && r.room_type === roomType) : null;
       const current = rooms.find(r => r.id === roomId && r.room_type === roomType);
       const target = requested || current || rooms.find(r => r.room_type === roomType);
       if (target) setRoomId(target.id);
     }
-    setActiveSection(section);
+    const path = SECTION_PATHS[nextSection];
+    if (window.location.pathname !== path) window.history.pushState({ section: nextSection }, '', path);
+    setActiveSection(nextSection);
     setShowAdmin(false);
     setError('');
     setNotice('');
   }
+
+  useEffect(() => {
+    const syncRoute = () => {
+      setActiveSection(sectionFromPath());
+      setShowAdmin(false);
+      setError('');
+      setNotice('');
+    };
+    window.addEventListener('popstate', syncRoute);
+    return () => window.removeEventListener('popstate', syncRoute);
+  }, []);
+
+  useEffect(() => {
+    if (!session || !profile || !activeSection) return;
+    const adminOnly = ['members', 'announcements', 'tools', 'rooms', 'ops'].includes(activeSection);
+    if (adminOnly && profile.role !== 'admin') {
+      window.history.replaceState({ section: 'dashboard' }, '', SECTION_PATHS.dashboard);
+      setActiveSection('dashboard');
+      setError('이 페이지는 관리자 전용입니다.');
+    }
+  }, [session, profile, activeSection]);
 
   useEffect(() => {
     // Keep the PLAYER SPACE navigation visible on initial login. Only scroll
@@ -240,7 +275,7 @@ function App() {
     try {
       const { data, error: createError } = await supabase.rpc('create_auction_room', { p_name: name, p_budget: Number(newRoomBudget), p_team_size: Number(newRoomTeamSize), p_team_count: Number(newRoomTeamCount), p_room_type: newRoomType });
       if (createError) throw createError;
-      await refreshRooms(data); setNewRoomName(''); setShowAdmin(false); setActiveSection(newRoomType === 'balance' ? 'balance' : 'auction'); setNotice((newRoomType === 'balance' ? '점수 팀배정방' : '선수 경매방') + '을 만들었습니다.');
+      await refreshRooms(data); setNewRoomName(''); setShowAdmin(false); navigateSection(newRoomType === 'balance' ? 'balance' : 'auction', data); setNotice((newRoomType === 'balance' ? '점수 팀배정방' : '선수 경매방') + '을 만들었습니다.');
     } catch (e) { setError(e.message || (newRoomType === 'balance' ? '점수 팀배정방 생성에 실패했습니다.' : '선수 경매방 생성에 실패했습니다.')); } finally { setBusy(false); }
   }
   async function saveRoomName(targetRoom) {
@@ -350,8 +385,8 @@ function App() {
   if (!session) return <main className="login"><div className="logo"><Orbit size={27}/></div><p className="eyebrow">BAEKYA COMMUNITY · LEAGUE OF LEGENDS</p><h1>BAEKYA <span>AUCTION</span></h1><p className="muted lead">팀장을 맡고, 포인트를 전략적으로 사용해<br/>우리 팀의 승리를 만들어 보세요.</p><button className="btn primary loginbtn" onClick={login}><Shield size={18}/> Discord로 로그인</button>{error && <p className="error">{error}</p>}<p className="tiny">디스코드 인증은 Supabase OAuth 설정이 완료된 뒤 작동합니다.</p></main>;
 
   return <div className="app"><header><div className="brand"><div className="moon"><Orbit size={22}/></div><div><h1>BAEKYA <span>AUCTION</span></h1><p>백야 · PLAYER DRAFT SYSTEM</p></div></div><div className="head-actions"><span className="pill">{profile?.discord_username || session.user.user_metadata?.full_name || session.user.email}</span>{(activeSection === 'auction' || activeSection === 'balance') && <label className="room-picker"><span>{activeSection === 'balance' ? '팀배정방' : '경매방'}</span><select aria-label={activeSection === 'balance' ? '팀배정방 선택' : '경매방 선택'} value={rooms.some(r=>r.id===roomId && r.room_type===(activeSection==='balance'?'balance':'auction')) ? roomId : ''} onChange={e=>{setRoomId(e.target.value);setShowAdmin(false);setError('');setNotice('');}}><option value="" disabled>방 선택</option>{rooms.filter(r=>r.room_type===(activeSection==='balance'?'balance':'auction')).map(r=><option key={r.id} value={r.id}>{r.name} · {r.status==='setup'?'준비':r.status==='running'?'진행 중':r.status==='paused'?'일시정지':'종료'}</option>)}</select></label>}{isAdmin && <button className="btn ghost" onClick={()=>setShowAdmin(v=>!v)}><SlidersHorizontal size={16}/> 관리자</button>}<button className="btn ghost" onClick={loadAll}><RefreshCw size={16}/></button><button className="btn ghost" onClick={logout}><LogOut size={16}/></button></div></header>
-    <main className={`main section-${activeSection}`}><section className="navigation-area">
-      <div className="navigation-heading"><div><span className="navigation-kicker">PLAYER SPACE</span><h3>일반 이용</h3></div><p>참가자 누구나 이용할 수 있는 기능</p></div>
+    <main className={`main section-${activeSection} role-${isAdmin ? "admin" : myTeam ? "captain" : "member"}`}><section className="navigation-area">
+      <div className="navigation-heading"><div><span className="navigation-kicker">PLAYER SPACE</span><h3>기능 메뉴</h3></div><p>{isAdmin ? "관리자 권한 · 전체 기능 이용 가능" : myTeam ? "팀장 권한 · 경매 입찰 및 팀 관련 기능 이용 가능" : "일반 멤버 권한 · 조회 및 이벤트 참여 기능 이용 가능"}</p></div>
       <nav className="feature-tabs public-feature-tabs" aria-label="일반 이용 기능">
         <button type="button" className={activeSection === 'dashboard' ? 'feature-tab active' : 'feature-tab'} onClick={() => navigateSection('dashboard') }><Orbit size={17}/><span>통합 홈</span><small>운영 현황</small></button>
         <button type="button" className={activeSection === 'profiles' ? 'feature-tab active' : 'feature-tab'} onClick={() => navigateSection('profiles')}><ContactRound size={17}/><span>선수 프로필</span><small>등급 · 전적 · 낙찰</small></button>
@@ -362,7 +397,7 @@ function App() {
         <button type="button" className={activeSection === 'events' ? 'feature-tab active' : 'feature-tab'} onClick={() => navigateSection('events') }><Gem size={17}/><span>관전 이벤트</span><small>승리 팀 · MVP 예측</small></button>
       </nav>
       {isAdmin && <div className="admin-navigation">
-        <div className="navigation-heading admin-navigation-heading"><div><span className="navigation-kicker">ADMIN CONTROL</span><h3>관리자 전용</h3></div><p>운영 권한이 있는 계정에만 표시됩니다</p></div>
+        <div className="navigation-heading admin-navigation-heading"><div><span className="navigation-kicker">ADMIN CONTROL</span><h3>운영 도구</h3></div><p>관리자 계정 전용 · 일반 멤버와 팀장에게는 표시되지 않습니다</p></div>
         <nav className="feature-tabs admin-feature-tabs" aria-label="관리자 전용 기능">
           <button type="button" className={activeSection === 'members' ? 'feature-tab active' : 'feature-tab'} onClick={() => navigateSection('members') }><ContactRound size={17}/><span>멤버 관리</span><small>닉네임 · 계정</small></button>
           <button type="button" className={activeSection === 'announcements' ? 'feature-tab active' : 'feature-tab'} onClick={() => navigateSection('announcements') }><Megaphone size={17}/><span>이벤트 공지</span><small>작성 · 관리</small></button>
@@ -387,7 +422,7 @@ function App() {
       </div>
     </section>
     <section className="stats"><Stat icon={<ContactRound/>} label="참가자" value={`${players.length}명`} sub="팀장 포함"/><Stat icon={<Zap/>} label="경매 대기" value={`${activePlayers.length}명`} sub="팀장 제외"/><Stat icon={<Gem/>} label="전체 예산" value={`${teams.reduce((n,t)=>n+t.budget,0)}P`} sub="팀별 초기 30P"/><Stat icon={<History/>} label="낙찰 완료" value={`${history.length}명`} sub="기록 저장 중"/></section>
-    <div id="section-workspace" className="section-workspace" style={{scrollMarginTop:'20px'}}>{activeSection === 'rooms' && isAdmin && <section className="room-management"><div className="panel"><div className="panelhead"><div><h3>{newRoomType === 'balance' ? '새 점수 팀배정방 만들기' : '새 선수 경매방 만들기'}</h3><p className="tiny">경매와 점수 팀배정 방은 각각 독립적으로 생성됩니다.</p></div><span className="pill">{rooms.length}개 방</span></div><form onSubmit={createRoom} className="adminform"><label className="field">방 종류<select value={newRoomType} onChange={e=>setNewRoomType(e.target.value)}><option value="auction">선수 경매방</option><option value="balance">점수 팀배정방</option></select></label><label className="field">방 이름<input value={newRoomName} onChange={e=>setNewRoomName(e.target.value)} placeholder="예: 백야 롤 내전 2회차" maxLength={60} required /></label><label className="field">팀별 예산 (P)<input type="number" min="1" max="500" value={newRoomBudget} onChange={e=>setNewRoomBudget(e.target.value)} required /></label><label className="field">팀당 인원<input type="number" min="2" max="10" value={newRoomTeamSize} onChange={e=>setNewRoomTeamSize(e.target.value)} required /></label><label className="field">팀 수<input type="number" min="2" max="10" value={newRoomTeamCount} onChange={e=>setNewRoomTeamCount(e.target.value)} required /></label><button className="btn primary" disabled={busy}><Plus size={16}/> {newRoomType === 'balance' ? '점수 팀배정방 생성' : '선수 경매방 생성'}</button></form><p className="tiny">{newRoomType === 'balance' ? '점수 팀배정 전용 방이 생성됩니다. 선수 경매 기록과는 분리됩니다.' : '선수 경매 전용 방이 생성됩니다. 점수 팀배정 기록과는 분리됩니다.'} 설정한 팀 수만큼 팀이 자동 생성됩니다.</p></div><div className="panel"><div className="panelhead"><h3>방 목록</h3><span className="pill">{rooms.length}개</span></div>{rooms.length ? <div className="playerlist">{rooms.map(r=><div className="playerrow" key={r.id}><div className="grow"><strong><span className="pill">{r.room_type === 'balance' ? '점수 팀배정' : '선수 경매'}</span></strong><label className="field room-name-edit"><span className="tiny">방 이름</span><input value={roomNameInputs[r.id] ?? r.name} onChange={e=>setRoomNameInputs(prev=>({...prev,[r.id]:e.target.value}))} maxLength={60} aria-label={r.name + ' 방 이름 수정'} /></label><small>{new Date(r.created_at).toLocaleDateString('ko-KR')} 생성 · {r.status==='setup'?'준비':r.status==='running'?'진행 중':r.status==='paused'?'일시정지':'종료'}</small></div><button type="button" className="btn ghost" disabled={busy} onClick={()=>saveRoomName(r)}>이름 저장</button>{r.id===roomId ? <span className="pill">현재 선택</span> : <button type="button" className="btn ghost" disabled={busy} onClick={()=>{setRoomId(r.id);setActiveSection(r.room_type === 'balance' ? 'balance' : 'auction');setError('');setNotice('');}}>방 열기</button>}{r.status==='finished' && <button type="button" className="btn danger" disabled={busy} onClick={()=>deleteRoom(r)}>삭제</button>}</div>)}</div> : <div className="empty">아직 생성된 경매방이 없습니다.</div>}</div></section>}{activeSection === 'ops' && isAdmin && <OperationsCenter room={room} rooms={rooms} teams={teams} players={players} history={history} profiles={profiles} onNavigate={(section, targetRoomId) => navigateSection(section, targetRoomId)} />}{activeSection === 'dashboard' && <PublicDashboard room={room} rooms={rooms} teams={teams} players={players} history={history} onNavigate={navigateSection} />}{activeSection === 'members' && isAdmin && <MemberManagement players={players} allPlayers={allPlayers} profiles={profiles} teams={teams} nicknameInputs={nicknameInputs} setNicknameInputs={setNicknameInputs} saveNickname={saveNickname} saveGrade={saveGrade} saveGlobalGrade={saveGlobalGrade} unsetCaptain={unsetCaptain} busy={busy} room={room} />}{activeSection === 'profiles' && <PlayerProfiles supabase={supabase} roomId={roomId} room={room} players={players} teams={teams} history={history} isAdmin={isAdmin} onRefresh={loadAll} />}{activeSection === 'tournament' && <AdminRecords supabase={supabase} roomId={roomId} room={room} session={session} mode="tournament" readOnly={!isAdmin} />}{activeSection === 'bracket' && <TournamentBracket supabase={supabase} roomId={roomId} room={room} isAdmin={isAdmin} />}{activeSection === 'announcements' && isAdmin && <AdminRecords supabase={supabase} roomId={roomId} room={room} session={session} mode="events" />}{activeSection === 'tools' && isAdmin && <RoomTools supabase={supabase} roomId={roomId} room={room} isAdmin={isAdmin} />}{activeSection === 'events' && <SpectatorEvents supabase={supabase} roomId={roomId} teams={teams} players={players} session={session} profile={profile} isAdmin={isAdmin} onRefresh={loadAll} />}
+    <div id="section-workspace" className="section-workspace" style={{scrollMarginTop:'20px'}}>{activeSection === 'rooms' && isAdmin && <section className="room-management"><div className="panel"><div className="panelhead"><div><h3>{newRoomType === 'balance' ? '새 점수 팀배정방 만들기' : '새 선수 경매방 만들기'}</h3><p className="tiny">경매와 점수 팀배정 방은 각각 독립적으로 생성됩니다.</p></div><span className="pill">{rooms.length}개 방</span></div><form onSubmit={createRoom} className="adminform"><label className="field">방 종류<select value={newRoomType} onChange={e=>setNewRoomType(e.target.value)}><option value="auction">선수 경매방</option><option value="balance">점수 팀배정방</option></select></label><label className="field">방 이름<input value={newRoomName} onChange={e=>setNewRoomName(e.target.value)} placeholder="예: 백야 롤 내전 2회차" maxLength={60} required /></label><label className="field">팀별 예산 (P)<input type="number" min="1" max="500" value={newRoomBudget} onChange={e=>setNewRoomBudget(e.target.value)} required /></label><label className="field">팀당 인원<input type="number" min="2" max="10" value={newRoomTeamSize} onChange={e=>setNewRoomTeamSize(e.target.value)} required /></label><label className="field">팀 수<input type="number" min="2" max="10" value={newRoomTeamCount} onChange={e=>setNewRoomTeamCount(e.target.value)} required /></label><button className="btn primary" disabled={busy}><Plus size={16}/> {newRoomType === 'balance' ? '점수 팀배정방 생성' : '선수 경매방 생성'}</button></form><p className="tiny">{newRoomType === 'balance' ? '점수 팀배정 전용 방이 생성됩니다. 선수 경매 기록과는 분리됩니다.' : '선수 경매 전용 방이 생성됩니다. 점수 팀배정 기록과는 분리됩니다.'} 설정한 팀 수만큼 팀이 자동 생성됩니다.</p></div><div className="panel"><div className="panelhead"><h3>방 목록</h3><span className="pill">{rooms.length}개</span></div>{rooms.length ? <div className="playerlist">{rooms.map(r=><div className="playerrow" key={r.id}><div className="grow"><strong><span className="pill">{r.room_type === 'balance' ? '점수 팀배정' : '선수 경매'}</span></strong><label className="field room-name-edit"><span className="tiny">방 이름</span><input value={roomNameInputs[r.id] ?? r.name} onChange={e=>setRoomNameInputs(prev=>({...prev,[r.id]:e.target.value}))} maxLength={60} aria-label={r.name + ' 방 이름 수정'} /></label><small>{new Date(r.created_at).toLocaleDateString('ko-KR')} 생성 · {r.status==='setup'?'준비':r.status==='running'?'진행 중':r.status==='paused'?'일시정지':'종료'}</small></div><button type="button" className="btn ghost" disabled={busy} onClick={()=>saveRoomName(r)}>이름 저장</button>{r.id===roomId ? <span className="pill">현재 선택</span> : <button type="button" className="btn ghost" disabled={busy} onClick={()=>navigateSection(r.room_type === 'balance' ? 'balance' : 'auction',r.id)}>방 열기</button>}{r.status==='finished' && <button type="button" className="btn danger" disabled={busy} onClick={()=>deleteRoom(r)}>삭제</button>}</div>)}</div> : <div className="empty">아직 생성된 경매방이 없습니다.</div>}</div></section>}{activeSection === 'ops' && isAdmin && <OperationsCenter room={room} rooms={rooms} teams={teams} players={players} history={history} profiles={profiles} onNavigate={(section, targetRoomId) => navigateSection(section, targetRoomId)} />}{activeSection === 'dashboard' && <PublicDashboard room={room} rooms={rooms} teams={teams} players={players} history={history} onNavigate={navigateSection} />}{activeSection === 'members' && isAdmin && <MemberManagement players={players} allPlayers={allPlayers} profiles={profiles} teams={teams} nicknameInputs={nicknameInputs} setNicknameInputs={setNicknameInputs} saveNickname={saveNickname} saveGrade={saveGrade} saveGlobalGrade={saveGlobalGrade} unsetCaptain={unsetCaptain} busy={busy} room={room} />}{activeSection === 'profiles' && <PlayerProfiles supabase={supabase} roomId={roomId} room={room} players={players} teams={teams} history={history} isAdmin={isAdmin} onRefresh={loadAll} />}{activeSection === 'tournament' && <AdminRecords supabase={supabase} roomId={roomId} room={room} session={session} mode="tournament" readOnly={!isAdmin} />}{activeSection === 'bracket' && <TournamentBracket supabase={supabase} roomId={roomId} room={room} isAdmin={isAdmin} />}{activeSection === 'announcements' && isAdmin && <AdminRecords supabase={supabase} roomId={roomId} room={room} session={session} mode="events" />}{activeSection === 'tools' && isAdmin && <RoomTools supabase={supabase} roomId={roomId} room={room} isAdmin={isAdmin} />}{activeSection === 'events' && <SpectatorEvents supabase={supabase} roomId={roomId} teams={teams} players={players} session={session} profile={profile} isAdmin={isAdmin} onRefresh={loadAll} />}
     {activeSection === 'balance' && <TeamBalance supabase={supabase} roomId={roomId} room={room} teams={teams} players={players} history={history} isAdmin={isAdmin} onRefresh={loadAll} />}
     {error && <div className="alert"><CircleAlert size={17}/>{error}</div>}{notice && <div className="success">{notice}</div>}
     {activeSection === 'auction' && <>
