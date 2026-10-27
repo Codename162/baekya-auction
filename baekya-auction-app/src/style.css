@@ -791,3 +791,57 @@ table { border-collapse: separate; border-spacing: 0; }
   .workspace-toolbar .section-home-button { min-height: 38px; padding: 0 11px; font-size: 12px; }
   .workspace-toolbar-label { font-size: 11px; max-width: 45%; }
 }
+
+/* Live operations dashboard, browser alerts, and mobile-first event views. */
+.live-operations-hub { display: grid; gap: 14px; margin: 0 0 22px; }
+.live-hub-header { display:flex; align-items:center; justify-content:space-between; gap:18px; }
+.live-hub-title { display:flex; align-items:center; gap:13px; min-width:0; }
+.live-hub-icon { display:grid; place-items:center; width:44px; height:44px; flex:0 0 auto; border-radius:13px; color:#d7d1ff; background:rgba(120,104,246,.15); border:1px solid rgba(169,157,255,.22); }
+.live-hub-title .eyebrow { margin:0 0 4px; }
+.live-hub-title h3 { margin:0 0 4px; font-size:18px; }
+.live-hub-title .tiny { margin:0; }
+.live-hub-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.live-hub-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; align-items:start; }
+.live-hub-card { min-width:0; }
+.live-hub-card .panelhead h3 { display:flex; align-items:center; gap:8px; }
+.live-hub-card .panelhead h3 svg { color:#aaa0ff; }
+.live-hub-live-pill { color:#a1f2cc; border-color:#6ad6a544; background:#6ad6a510; }
+.live-hub-list { display:grid; gap:9px; }
+.live-hub-match, .live-hub-announcement { min-width:0; padding:13px; border:1px solid rgba(184,190,255,.11); border-radius:12px; background:rgba(255,255,255,.018); }
+.live-hub-match-meta { display:flex; align-items:center; gap:7px; margin-bottom:11px; color:#aab2d1; font-size:11px; }
+.live-hub-dot { width:7px; height:7px; border-radius:50%; background:#72e0b2; box-shadow:0 0 0 4px #72e0b21c; }
+.live-hub-score { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:10px; text-align:center; }
+.live-hub-score strong { min-width:0; overflow-wrap:anywhere; font-size:13px; }
+.live-hub-score strong:last-child { text-align:right; }
+.live-hub-score strong:first-child { text-align:left; }
+.live-hub-score b { white-space:nowrap; font-size:16px; font-variant-numeric:tabular-nums; }
+.live-hub-empty { display:flex; min-height:105px; align-items:center; justify-content:center; flex-direction:column; gap:8px; color:#9ca8c7; font-size:12px; text-align:center; }
+.live-hub-empty svg { color:#8174ff; }
+.live-hub-next { display:grid; gap:7px; margin-top:12px; padding-top:12px; border-top:1px solid rgba(184,190,255,.1); color:#aab2d1; font-size:12px; }
+.live-hub-next strong { display:flex; align-items:center; gap:6px; color:#ddd9ff; }
+.live-hub-link { width:100%; margin-top:12px; justify-content:space-between; }
+.live-hub-announcement { display:flex; align-items:flex-start; gap:11px; }
+.live-hub-announcement-icon { display:grid; place-items:center; flex:0 0 auto; width:32px; height:32px; border-radius:10px; color:#c5bdff; background:rgba(120,104,246,.12); }
+.live-hub-announcement .grow { min-width:0; }
+.live-hub-announcement strong { display:block; font-size:13px; overflow-wrap:anywhere; }
+.live-hub-announcement p { margin:5px 0 8px; color:#aab2d1; font-size:12px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.live-hub-announcement small { display:flex; align-items:center; flex-wrap:wrap; gap:5px; color:#8f9bbb; font-size:10px; }
+.live-hub-message { margin:0; }
+.live-hub-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; color:#8995b6; font-size:11px; padding:0 3px; }
+.live-hub-footer span { display:flex; align-items:center; gap:6px; }
+@media(max-width:760px) {
+ .live-hub-header { align-items:flex-start; flex-direction:column; }
+ .live-hub-actions { width:100%; }
+ .live-hub-actions .btn { flex:1; }
+ .live-hub-grid { grid-template-columns:1fr; }
+ .live-hub-footer { align-items:flex-start; flex-direction:column; }
+}
+@media(max-width:420px) {
+ .live-hub-title { align-items:flex-start; }
+ .live-hub-icon { width:38px; height:38px; }
+ .live-hub-title h3 { font-size:16px; }
+ .live-hub-actions .btn { padding:9px 8px; font-size:11px; }
+ .live-hub-score { gap:6px; }
+ .live-hub-score strong { font-size:12px; }
+ .live-hub-score b { font-size:14px; }
+}
