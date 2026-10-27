@@ -63,6 +63,7 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
       const query = editingResult ? supabase.from('tournament_results').update(payload).eq('id', editingResult).eq('room_id', roomId) : supabase.from('tournament_results').insert(payload);
       const { error: saveError } = await query;
       if (saveError) throw saveError;
+      if (session?.access_token) fetch('/api/discord-notify', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify({ kind: 'match', title: '대회 전적 업데이트: ' + payload.title, content: payload.team_a + ' ' + payload.score_a + ' : ' + payload.score_b + ' ' + payload.team_b + (payload.mvp ? '\\nMVP: ' + payload.mvp : '') }) }).catch(() => {});
       setNotice(editingResult ? '대회 전적을 수정했습니다.' : '대회 전적을 저장했습니다.'); resetResult(); await load();
     } catch (e2) { setError('저장하지 못했습니다: ' + e2.message); }
     finally { setSaving(false); }
@@ -92,6 +93,7 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
       const query = editingAnnouncement ? supabase.from('event_announcements').update(payload).eq('id', editingAnnouncement).eq('room_id', roomId) : supabase.from('event_announcements').insert(payload);
       const { error: saveError } = await query;
       if (saveError) throw saveError;
+      if (payload.status === 'published' && session?.access_token) fetch('/api/discord-notify', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify({ kind: 'announcement', title: payload.title, content: payload.content + (payload.event_date ? '\\n일정: ' + new Date(payload.event_date).toLocaleString('ko-KR') : '') }) }).catch(() => {});
       setNotice(editingAnnouncement ? '이벤트 공지를 수정했습니다.' : '이벤트 공지를 저장했습니다.'); resetAnnouncement(); await load();
     } catch (e2) { setError('저장하지 못했습니다: ' + e2.message); }
     finally { setSaving(false); }
