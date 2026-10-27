@@ -16,11 +16,13 @@ export default function LiveOperationsHub({ supabase, roomId, isAdmin, onNavigat
   const initialRef = useRef(false);
 
   const load = useCallback(async () => {
-    if (!supabase || !roomId) { setAnnouncements([]); setMatches([]); return; }
+    if (!supabase) { setAnnouncements([]); setMatches([]); return; }
     setLoading(true); setError('');
     const [a, m] = await Promise.all([
-      supabase.from('event_announcements').select('id,title,content,event_date,signup_deadline,status,created_at').eq('room_id', roomId).eq('status', 'published').order('event_date', { ascending: true }).limit(8),
-      supabase.from('tournament_matches').select('id,tournament_name,team_a,team_b,score_a,score_b,status,round_number,match_number,created_at').eq('room_id', roomId).order('round_number').order('match_number').limit(20)
+      supabase.from('community_announcements').select('id,title,content,event_date,signup_deadline,status,created_at').in('status', ['published', 'closed']).order('created_at', { ascending: false }).limit(50),
+      roomId
+        ? supabase.from('tournament_matches').select('id,tournament_name,team_a,team_b,score_a,score_b,status,round_number,match_number,created_at').eq('room_id', roomId).order('round_number').order('match_number').limit(20)
+        : Promise.resolve({ data: [], error: null })
     ]);
     if (a.error && !/does not exist|schema cache/i.test(a.error.message || '')) setError('공지 일정을 불러오지 못했습니다: ' + a.error.message);
     if (m.error && !/does not exist|schema cache/i.test(m.error.message || '')) setError((prev) => prev ? prev + ' · 경기 현황도 불러오지 못했습니다.' : '경기 현황을 불러오지 못했습니다: ' + m.error.message);
@@ -42,11 +44,11 @@ export default function LiveOperationsHub({ supabase, roomId, isAdmin, onNavigat
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
-    if (!supabase || !roomId) return;
-    const channel = supabase.channel('live-operations-hub-' + roomId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_announcements', filter: 'room_id=eq.' + roomId }, load)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_matches', filter: 'room_id=eq.' + roomId }, load)
-      .subscribe();
+    if (!supabase) return;
+    const channel = supabase.channel('live-operations-hub' + (roomId ? '-' + roomId : ''))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'community_announcements' }, load);
+    if (roomId) channel.on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_matches', filter: 'room_id=eq.' + roomId }, load);
+    channel.subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [supabase, roomId, load]);
 
