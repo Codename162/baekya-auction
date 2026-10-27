@@ -1,0 +1,2 @@
+Temporary trigger for the baekya-auction-test Vercel preview deployment.
+This file is safe to remove after the preview deployment is confirmed.
