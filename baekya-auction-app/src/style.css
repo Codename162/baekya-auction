@@ -856,3 +856,11 @@ table { border-collapse: separate; border-spacing: 0; }
 .auction-player-identity{min-width:0}
 .auction-profile-kicker{display:inline-block;color:#b8a8ff;font-size:9px;font-weight:900;letter-spacing:.18em;margin-bottom:5px}
 .auction-player-identity h2{overflow-wrap:anywhere}
+
+
+/* Compact player bio shown beside the avatar during live auction. */
+.auction-player-bio{display:grid;gap:5px;margin-top:9px;max-width:620px;padding:10px 12px;border:1px solid rgba(184,190,255,.13);border-radius:11px;background:rgba(9,13,26,.42)}
+.auction-player-bio-meta{margin:0;color:#c7c1ff;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.auction-player-bio-notes{margin:0;color:#e0e4f6;font-size:12px;line-height:1.55;overflow-wrap:anywhere;white-space:pre-wrap}
+.auction-player-bio-empty{margin:8px 0 0!important;color:#8995b6!important;font-size:11px!important}
+@media(max-width:600px){.auction-playerhead{align-items:flex-start;gap:13px}.auction-profile-frame{flex-basis:66px;width:66px;height:66px;border-radius:19px}.auction-player-avatar,.auction-profile-frame>.avatar{border-radius:16px}.auction-player-bio{padding:8px 9px;margin-top:7px}.auction-player-bio-meta{font-size:10px}.auction-player-bio-notes{font-size:11px}}
