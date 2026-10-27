@@ -633,3 +633,120 @@ footer{border-top:1px solid #ffffff10;margin-top:30px;padding-top:22px;letter-sp
 .navigation-area.navigation-area-collapsed { display: none; }
 .section-home-button { white-space: nowrap; }
 @media (max-width: 600px) { .section-home-button { padding: 9px 10px; font-size: 12px; } }
+
+
+/* Visual polish pass: calmer surfaces, consistent rhythm, clearer hierarchy. */
+:root {
+  --bg: #090d1a;
+  --panel: #121a2d;
+  --panel2: #0e1526;
+  --border: rgba(184, 190, 255, .13);
+  --muted: #9ca8c7;
+  --primary: #7868f6;
+  --secondary: #28224d;
+  color-scheme: dark;
+}
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse at 50% -20%, rgba(94, 73, 186, .22), transparent 48%),
+    linear-gradient(180deg, #0a0e1c 0%, #090d18 100%);
+}
+::selection { background: rgba(120, 104, 246, .38); color: #fff; }
+header {
+  padding: 14px clamp(16px, 4vw, 42px);
+  background: rgba(9, 13, 26, .88);
+  border-bottom-color: rgba(184, 190, 255, .12);
+}
+.brand { min-width: 0; }
+.brand h1 { font-size: 16px; letter-spacing: .095em; }
+.brand p { letter-spacing: .035em; }
+.moon, .logo {
+  border-radius: 14px;
+  background: linear-gradient(145deg, #8c7bff, #5946c7);
+  box-shadow: 0 6px 22px rgba(91, 72, 205, .22), inset 0 1px 0 rgba(255,255,255,.2);
+}
+.main { max-width: 1320px; padding-top: 30px; }
+.hero { margin-bottom: 24px; }
+.hero h2 { line-height: 1.12; }
+.eyebrow, .navigation-kicker { letter-spacing: .16em; }
+.panel, .stat {
+  border-color: rgba(184, 190, 255, .12);
+  background: linear-gradient(145deg, rgba(20, 28, 48, .96), rgba(14, 20, 36, .96));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .10);
+}
+.panel { border-radius: 16px; padding: 20px; }
+.stat { border-radius: 15px; padding: 18px; }
+.panelhead { margin-bottom: 18px; }
+.panelhead h3 { letter-spacing: -.015em; }
+.btn {
+  min-height: 39px;
+  border-radius: 10px;
+  transition: background .16s ease, border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+.btn:hover:not(:disabled) { transform: translateY(-1px); filter: none; border-color: rgba(169, 157, 255, .42); }
+.btn.primary {
+  background: linear-gradient(135deg, #8273ff, #6655dc);
+  box-shadow: 0 5px 15px rgba(105, 86, 225, .18);
+}
+.btn.ghost { background: rgba(255,255,255,.035); }
+.pill, .status { background: rgba(255,255,255,.035); }
+input, select, textarea {
+  accent-color: #8879ff;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: rgba(147, 132, 255, .8) !important;
+  box-shadow: 0 0 0 3px rgba(120, 104, 246, .14);
+}
+.navigation-area {
+  margin-bottom: 22px;
+  padding: 18px;
+  border: 1px solid rgba(184, 190, 255, .11);
+  border-radius: 18px;
+  background: rgba(14, 20, 36, .74);
+}
+.navigation-heading { margin-bottom: 14px; }
+.navigation-heading h3 { font-size: 19px; letter-spacing: -.025em; }
+.feature-tabs { gap: 9px; }
+.feature-tab {
+  border: 1px solid rgba(184, 190, 255, .12);
+  border-radius: 12px;
+  background: rgba(255,255,255,.025);
+  padding: 13px 14px;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+.feature-tab:hover { transform: translateY(-1px); border-color: rgba(169,157,255,.42); background: rgba(120,104,246,.07); }
+.feature-tab.active {
+  border-color: rgba(155, 140, 255, .62);
+  background: linear-gradient(135deg, rgba(120,104,246,.19), rgba(76,61,151,.12));
+  box-shadow: inset 0 0 0 1px rgba(155,140,255,.08);
+}
+.room-selection-panel { margin-top: 0; }
+.room-selection-groups { gap: 14px; }
+.room-selection-group, .team, .playerrow, .spectator-create {
+  border-color: rgba(184, 190, 255, .11);
+}
+.team, .playerrow { transition: border-color .16s ease, background .16s ease; }
+.team:hover, .playerrow:hover { border-color: rgba(169,157,255,.25); }
+.empty { border-color: rgba(184,190,255,.2); }
+.section-workspace { scroll-margin-top: 92px; }
+.admin-navigation { border-top-color: rgba(184,190,255,.12); }
+table { border-collapse: separate; border-spacing: 0; }
+@media (min-width: 900px) {
+  .main { padding-left: clamp(24px, 4vw, 48px); padding-right: clamp(24px, 4vw, 48px); }
+}
+@media (max-width: 650px) {
+  header { gap: 12px; }
+  .brand h1 { font-size: 15px; }
+  .main { padding-top: 22px; padding-bottom: 32px; }
+  .navigation-area { padding: 13px; border-radius: 15px; }
+  .panel { padding: 15px; }
+  .panelhead { align-items: flex-start; }
+  .section-home-button { min-height: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
