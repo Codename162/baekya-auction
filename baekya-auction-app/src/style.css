@@ -628,3 +628,8 @@ footer{border-top:1px solid #ffffff10;margin-top:30px;padding-top:22px;letter-sp
 .section-workspace{min-height:36vh}
 @media(min-width:1000px){.public-feature-tabs,.admin-feature-tabs{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}}
 @media(max-width:600px){.public-feature-tabs,.admin-feature-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.feature-tab{min-height:68px}.navigation-heading p{max-width:100%}}
+
+/* Feature pages use a focused workspace; the dashboard remains the feature launcher. */
+.navigation-area.navigation-area-collapsed { display: none; }
+.section-home-button { white-space: nowrap; }
+@media (max-width: 600px) { .section-home-button { padding: 9px 10px; font-size: 12px; } }
