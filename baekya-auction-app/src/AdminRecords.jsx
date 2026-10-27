@@ -24,11 +24,13 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
   const [notice, setNotice] = useState('');
 
   async function load() {
-    if (!supabase || !roomId) return;
+    if (!supabase || (!roomId && mode !== 'events')) return;
     setLoading(true); setError('');
     try {
-      const table = mode === 'tournament' ? 'tournament_results' : 'event_announcements';
-      const { data, error: queryError } = await supabase.from(table).select('*').eq('room_id', roomId).order(mode === 'tournament' ? 'event_date' : 'created_at', { ascending: false });
+      const table = mode === 'tournament' ? 'tournament_results' : mode === 'events' ? 'community_announcements' : 'event_announcements';
+      let query = supabase.from(table).select('*');
+      if (mode !== 'events') query = query.eq('room_id', roomId);
+      const { data, error: queryError } = await query.order(mode === 'tournament' ? 'event_date' : 'created_at', { ascending: false });
       if (queryError) throw queryError;
       if (mode === 'tournament') setResults(data || []);
       else setAnnouncements(data || []);
@@ -87,14 +89,19 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
   async function saveAnnouncement(e) {
     e.preventDefault();
     if (!announcementForm.title.trim() || !announcementForm.content.trim()) { setError('공지 제목과 내용을 입력해 주세요.'); return; }
-    const payload = { room_id: roomId, title: announcementForm.title.trim(), content: announcementForm.content.trim(), event_date: announcementForm.event_date ? new Date(announcementForm.event_date).toISOString() : null, signup_deadline: announcementForm.signup_deadline ? new Date(announcementForm.signup_deadline).toISOString() : null, status: announcementForm.status, created_by: session?.user?.id || null, updated_at: new Date().toISOString() };
+    const payload = { ...(mode !== 'events' ? { room_id: roomId } : {}), title: announcementForm.title.trim(), content: announcementForm.content.trim(), event_date: announcementForm.event_date ? new Date(announcementForm.event_date).toISOString() : null, signup_deadline: announcementForm.signup_deadline ? new Date(announcementForm.signup_deadline).toISOString() : null, status: announcementForm.status, created_by: session?.user?.id || null, updated_at: new Date().toISOString() };
     setSaving(true); setError(''); setNotice('');
     try {
-      const query = editingAnnouncement ? supabase.from('event_announcements').update(payload).eq('id', editingAnnouncement).eq('room_id', roomId) : supabase.from('event_announcements').insert(payload);
+      let query;
+      const table = mode === 'events' ? 'community_announcements' : 'event_announcements';
+      if (editingAnnouncement) {
+        query = supabase.from(table).update(payload).eq('id', editingAnnouncement);
+        if (mode !== 'events') query = query.eq('room_id', roomId);
+      } else query = supabase.from(table).insert(payload);
       const { error: saveError } = await query;
       if (saveError) throw saveError;
       if (payload.status === 'published' && session?.access_token) fetch('/api/discord-notify', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify({ kind: 'announcement', title: payload.title, content: payload.content + (payload.event_date ? '\\n일정: ' + new Date(payload.event_date).toLocaleString('ko-KR') : '') }) }).catch(() => {});
-      setNotice(editingAnnouncement ? '이벤트 공지를 수정했습니다.' : '이벤트 공지를 저장했습니다.'); resetAnnouncement(); await load();
+      setNotice(editingAnnouncement ? '이벤트 공지를 수정했습니다.' : '이벤트 공지를 게시판에 저장했습니다.'); resetAnnouncement(); await load();
     } catch (e2) { setError('저장하지 못했습니다: ' + e2.message); }
     finally { setSaving(false); }
   }
@@ -108,7 +115,9 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
   async function deleteAnnouncement(item) {
     if (!window.confirm('「' + item.title + '」 공지를 삭제할까요?')) return;
     setSaving(true); setError(''); setNotice('');
-    const { error: deleteError } = await supabase.from('event_announcements').delete().eq('id', item.id).eq('room_id', roomId);
+    let deleteQuery = supabase.from(mode === 'events' ? 'community_announcements' : 'event_announcements').delete().eq('id', item.id);
+    if (mode !== 'events') deleteQuery = deleteQuery.eq('room_id', roomId);
+    const { error: deleteError } = await deleteQuery;
     setSaving(false);
     if (deleteError) setError('삭제하지 못했습니다: ' + deleteError.message);
     else { setNotice('이벤트 공지를 삭제했습니다.'); await load(); if (editingAnnouncement === item.id) resetAnnouncement(); }
@@ -131,7 +140,7 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
   }, {})).filter(team => !team.name.startsWith('__mvp__')).sort((a,b) => b.wins-a.wins || b.draws-a.draws || (b.pointsFor-b.pointsAgainst)-(a.pointsFor-a.pointsAgainst)) : [];
   const mvpLeaders = isTournament ? Object.entries(results.reduce((acc, item) => { const name=(item.mvp||'').trim(); if(name) acc[name]=(acc[name]||0)+1; return acc; }, {})).sort((a,b)=>b[1]-a[1]).slice(0,5) : [];
   return <section className="admin-records">
-    <div className="admin-records-heading"><div className="admin-records-icon">{isTournament ? <Trophy size={22}/> : <Megaphone size={22}/>}</div><div><h3>{isTournament ? '대회 전적 관리' : '이벤트 공지 관리'}</h3><p className="tiny">관리 대상 경매방: {room?.name || '미선택'} · {readOnly ? '멤버 열람' : '관리자 전용'}</p></div><span className="pill">{isTournament ? results.length + '개 기록' : announcements.length + '개 공지'}</span></div>
+    <div className="admin-records-heading"><div className="admin-records-icon">{isTournament ? <Trophy size={22}/> : <Megaphone size={22}/>}</div><div><h3>{isTournament ? '대회 전적 관리' : '이벤트 공지 관리'}</h3><p className="tiny">{mode === 'events' ? '전체 서버 공용 게시판 · 경매방/점수방과 독립' : `관리 대상 방: ${room?.name || '미선택'}`} · {readOnly ? '멤버 열람' : '관리자 전용'}</p></div><span className="pill">{isTournament ? results.length + '개 기록' : announcements.length + '개 공지'}</span></div>
     {isTournament && results.length > 0 && <div className="tournament-overview">
       <div className="tournament-summary-grid">
         <div className="stat"><small>등록 경기</small><strong>{results.length}</strong><span>현재 방 기준</span></div>
@@ -167,7 +176,7 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
       </div>
     </> : <>
       {!readOnly && <form className="panel admin-record-form" onSubmit={saveAnnouncement}>
-        <div className="panelhead"><div><h3>{editingAnnouncement ? '공지 수정' : '새 이벤트 공지'}</h3><p className="tiny">이벤트 공지를 작성하고 이 방의 공지 목록으로 관리합니다.</p></div>{editingAnnouncement && <button className="btn ghost" type="button" onClick={resetAnnouncement}><X size={15}/> 취소</button>}</div>
+        <div className="panelhead"><div><h3>{editingAnnouncement ? '공지 수정' : '새 이벤트 공지'}</h3><p className="tiny">이벤트 공지를 게시판에 작성하고 전체 공지 목록으로 관리합니다.</p></div>{editingAnnouncement && <button className="btn ghost" type="button" onClick={resetAnnouncement}><X size={15}/> 취소</button>}</div>
         <div className="admin-form-grid">
           <label className="admin-form-wide">공지 제목<input value={announcementForm.title} onChange={e=>setAnnouncementForm(v=>({...v,title:e.target.value}))} placeholder="예: 백야 롤 내전 참가 모집" maxLength={150} required/></label>
           <label className="admin-form-wide">공지 내용<textarea value={announcementForm.content} onChange={e=>setAnnouncementForm(v=>({...v,content:e.target.value}))} placeholder="일정, 참여 방법, 보상 등을 입력해 주세요." rows="5" maxLength={4000} required/></label>
