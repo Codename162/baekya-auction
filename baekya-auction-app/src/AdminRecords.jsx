@@ -30,6 +30,7 @@ export default function AdminRecords({ supabase, roomId, room, session, mode, re
       const table = mode === 'tournament' ? 'tournament_results' : mode === 'events' ? 'community_announcements' : 'event_announcements';
       let query = supabase.from(table).select('*');
       if (mode !== 'events') query = query.eq('room_id', roomId);
+      else if (readOnly) query = query.in('status', ['published', 'closed']);
       const { data, error: queryError } = await query.order(mode === 'tournament' ? 'event_date' : 'created_at', { ascending: false });
       if (queryError) throw queryError;
       if (mode === 'tournament') setResults(data || []);
