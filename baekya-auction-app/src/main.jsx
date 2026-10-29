@@ -200,12 +200,29 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
+    let checking = false;
     setRoomAccess(null);
     if (!session || !supabase || !roomId) return () => { cancelled = true; };
-    supabase.rpc('has_room_part_access', { p_room_id: roomId }).then(({ data, error }) => {
-      if (!cancelled) setRoomAccess(!error && data === true);
-    });
-    return () => { cancelled = true; };
+    const checkAccess = async () => {
+      if (checking || cancelled) return;
+      checking = true;
+      try {
+        const { data, error } = await supabase.rpc('has_room_part_access', { p_room_id: roomId });
+        if (!cancelled && !error) setRoomAccess(data === true);
+      } finally {
+        checking = false;
+      }
+    };
+    checkAccess();
+    // An admin may approve a request while the member is already logged in.
+    // Refresh access periodically and when the app returns to the foreground.
+    const timer = window.setInterval(checkAccess, 5000);
+    window.addEventListener('focus', checkAccess);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', checkAccess);
+    };
   }, [session, roomId]);
 
   useEffect(() => {
@@ -225,12 +242,10 @@ function App() {
       setAutoRegisteredKey(registrationKey);
       if (data?.status === 'registered') {
         setNotice(`${data.name || 'Discord 사용자'}님이 선수 목록에 자동 등록되었습니다.`);
-        await loadAll();
-      } else if (data?.status === 'captain') {
-        setAutoRegisteredKey(registrationKey);
-      } else {
-        setAutoRegisteredKey(registrationKey);
       }
+      // Reload even if the member was already registered, so the approved
+      // member appears in the selected room without a manual page refresh.
+      await loadAll();
     })();
     return () => { cancelled = true; };
   }, [session, roomId, rooms, autoRegisteredKey, roomAccess]);
