@@ -25,7 +25,7 @@ const emptyEdit = p => {
   return { games };
 };
 
-export default function PlayerProfiles({ supabase, roomId, room, players = [], teams = [], history = [], isAdmin = false, onRefresh }) {
+export default function PlayerProfiles({ supabase, roomId, room, players = [], teams = [], history = [], isAdmin = false, session = null, onRefresh }) {
   const [tournamentResults, setTournamentResults] = useState([]);
   const [search, setSearch] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
@@ -83,6 +83,10 @@ export default function PlayerProfiles({ supabase, roomId, room, players = [], t
   }).filter(p => (gradeFilter === 'all' || p.grade === gradeFilter) && p.name.toLowerCase().includes(search.trim().toLowerCase())), [players, history, teams, tournamentResults, gradeFilter, search]);
 
   async function saveProfile(player) {
+    if (!isAdmin && player.discord_user_id !== session?.user?.id) {
+      setError('본인 계정에 연결된 선수 프로필만 수정할 수 있습니다.');
+      return;
+    }
     const value = edits[player.id] || emptyEdit(player);
     const game_profiles = (value.games || []).map(g => ({
       game: String(g.game || '기타').trim().slice(0, 60),
@@ -137,9 +141,9 @@ export default function PlayerProfiles({ supabase, roomId, room, players = [], t
           <div><small>MVP</small><strong>{player.mvpCount}회</strong></div>
         </div>
         <div className="profile-card-foot"><span><Trophy size={14}/>대회 MVP {player.mvpCount}회</span><span><Gavel size={14}/>낙찰 기록 {player.auctionRecords.length}건</span><span>팀 승리 {player.wins}/{player.appearances}</span></div>
-        {isAdmin && <div className="profile-edit">
+        {(isAdmin || player.discord_user_id === session?.user?.id) && <div className="profile-edit">
           {editingId === player.id ? <>
-            <div className="profile-game-editor-heading"><strong>게임별 프로필</strong><button className="btn ghost" type="button" onClick={() => setEdits(v=>({...v,[player.id]:{...edit,games:[...(edit.games||[]),blankGame('리그 오브 레전드')]}}))}>+ 게임 추가</button></div>
+            <div className="profile-game-editor-heading"><strong>{isAdmin ? '게임별 프로필 관리' : '내 게임 프로필'}</strong><button className="btn ghost" type="button" onClick={() => setEdits(v=>({...v,[player.id]:{...edit,games:[...(edit.games||[]),blankGame('리그 오브 레전드')]}}))}>+ 게임 추가</button></div>
             {(edit.games || []).map((gameProfile, gameIndex) => <div className="profile-game-editor" key={gameIndex}>
               <div className="profile-game-editor-top"><strong>게임 프로필 {gameIndex + 1}</strong><button className="btn danger" type="button" onClick={() => setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.filter((_,i)=>i!==gameIndex)}}))}>삭제</button></div>
               <label className="field">게임<select value={gameProfile.game} onChange={e=>setEdits(v=>({...v,[player.id]:{...edit,games:edit.games.map((g,i)=>i===gameIndex?{...g,game:e.target.value}:g)}}))}>{[...new Set([...GAME_OPTIONS,gameProfile.game].filter(Boolean))].map(g=><option key={g} value={g}>{g}</option>)}</select></label>
@@ -150,7 +154,7 @@ export default function PlayerProfiles({ supabase, roomId, room, players = [], t
             </div>)}
             {!edit.games?.length && <p className="tiny">등록할 게임이 없습니다. ‘게임 추가’를 눌러 프로필을 만들어 주세요.</p>}
             <div className="profile-edit-actions"><button className="btn primary" type="button" disabled={busyId===player.id} onClick={()=>saveProfile(player)}><Save size={14}/>{busyId===player.id?'저장 중…':'프로필 저장'}</button><button className="btn ghost" type="button" onClick={()=>setEditingId('')}>취소</button></div>
-          </> : <button className="btn ghost full" type="button" onClick={()=>{setEdits(v=>({...v,[player.id]:emptyEdit(player)}));setEditingId(player.id);}}>게임 프로필 편집</button>}
+          </> : <button className="btn ghost full" type="button" onClick={()=>{setEdits(v=>({...v,[player.id]:emptyEdit(player)}));setEditingId(player.id);}}>{player.discord_user_id === session?.user?.id && !isAdmin ? '내 게임 프로필 수정' : '게임 프로필 편집'}</button>}
         </div>}
       </article>;
     })}</div> : <div className="empty">조건에 맞는 선수가 없습니다.</div>}
