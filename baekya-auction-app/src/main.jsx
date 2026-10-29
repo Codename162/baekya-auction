@@ -209,19 +209,13 @@ function App() {
   }, [session, roomId]);
 
   useEffect(() => {
-    if (!session?.user?.id || !supabase || !roomId) return;
+    if (!session?.user?.id || !supabase || !roomId || roomAccess !== true) return;
     const selectedRoom = rooms.find(r => r.id === roomId);
     if (!selectedRoom || selectedRoom.status === 'finished') return;
     const registrationKey = `${session.user.id}:${roomId}`;
     if (autoRegisteredKey === registrationKey) return;
     let cancelled = false;
     (async () => {
-      const { data: accessAllowed, error: accessError } = await supabase.rpc('has_room_part_access', { p_room_id: roomId });
-      if (cancelled) return;
-      if (accessError || accessAllowed !== true) {
-        setAutoRegisteredKey(registrationKey);
-        return;
-      }
       const { data, error: registrationError } = await supabase.rpc('register_discord_player', { p_room_id: roomId });
       if (cancelled) return;
       if (registrationError) {
@@ -239,7 +233,7 @@ function App() {
       }
     })();
     return () => { cancelled = true; };
-  }, [session, roomId, rooms, autoRegisteredKey]);
+  }, [session, roomId, rooms, autoRegisteredKey, roomAccess]);
   useEffect(() => {
     const timer = window.setInterval(() => setTimerNow(Date.now()), 250);
     return () => window.clearInterval(timer);
