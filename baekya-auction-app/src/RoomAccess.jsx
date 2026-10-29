@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { BadgeCheck, Clock, LockKeyhole, RefreshCw, ShieldCheck, Users } from 'lucide-react';
 
-const partNames = { part1: '1부', part2: '2부', both: '1부 · 2부' };
+const partNames = { part1: '참여 신청', part2: '참여 신청', both: '참여 신청' };
 const statusNames = { pending: '승인 대기', approved: '승인 완료', rejected: '반려' };
 
 export default function RoomAccess({ supabase, session, isAdmin, rooms, onRefreshRooms }) {
-  const [part, setPart] = useState('both');
+  const part = 'both';
   const [mine, setMine] = useState(null);
   const [requests, setRequests] = useState([]);
   const [parts, setParts] = useState({});
@@ -20,7 +20,6 @@ export default function RoomAccess({ supabase, session, isAdmin, rooms, onRefres
       const own = await supabase.from('room_access_requests').select('*').eq('user_id', session.user.id).maybeSingle();
       if (own.error) throw own.error;
       setMine(own.data || null);
-      if (own.data?.requested_part) setPart(own.data.requested_part);
       if (isAdmin) {
         const all = await supabase.from('room_access_requests').select('*').order('submitted_at', { ascending: false });
         if (all.error) throw all.error;
@@ -51,16 +50,15 @@ export default function RoomAccess({ supabase, session, isAdmin, rooms, onRefres
   }
 
   return <section className="panel access-panel">
-    <div className="panelhead"><div><h3><LockKeyhole size={18} style={{verticalAlign:'-3px',marginRight:8}}/>참여 부 신청 및 방 접근 권한</h3><p className="tiny">승인된 참여 부의 경매방과 점수 팀배정방만 이용할 수 있습니다.</p></div><button className="btn ghost" onClick={load} disabled={busy}><RefreshCw size={15}/></button></div>
+    <div className="panelhead"><div><h3><LockKeyhole size={18} style={{verticalAlign:'-3px',marginRight:8}}/>참여 신청</h3><p className="tiny">참여 신청 후 관리자 승인 시 경매방과 점수 팀배정방을 이용할 수 있습니다.</p></div><button className="btn ghost" onClick={load} disabled={busy}><RefreshCw size={15}/></button></div>
     {error && <div className="alert">{error}</div>}{notice && <div className="success">{notice}</div>}
     {!isAdmin && <div className="access-application">
-      <div className="access-status"><span className="access-status-icon"><Users size={20}/></span><div><strong>참여 부 신청</strong><p className="tiny">방 이름은 모두에게 표시되며, 승인 후 해당 부의 방을 이용할 수 있습니다.</p></div></div>
-      {mine && <p className="access-current">현재 신청: <strong>{partNames[mine.requested_part] || mine.requested_part}</strong> · <span className={'access-state '+mine.status}>{statusNames[mine.status] || mine.status}</span></p>}
+      <div className="access-status"><span className="access-status-icon"><Users size={20}/></span><div><strong>참여 신청</strong><p className="tiny">참여 신청 후 관리자의 승인을 받으면 이용할 수 있습니다.</p></div></div>
+      {mine && <p className="access-current">신청 상태: <span className={'access-state '+mine.status}>{statusNames[mine.status] || mine.status}</span></p>}
       <form className="access-form" onSubmit={e=>{e.preventDefault();runRpc('submit_room_access_request',{p_requested_part:part},'참여 신청을 제출했습니다.')}}>
-        <label className="field">참여할 부 선택<select value={part} onChange={e=>setPart(e.target.value)}><option value="part1">1부만 참여</option><option value="part2">2부만 참여</option><option value="both">1부와 2부 모두 참여</option></select></label>
-        <button className="btn primary" type="submit" disabled={busy}><ShieldCheck size={16}/>{mine?.status==='approved'?'참여 부 변경 신청':'참여 신청 제출'}</button>
+        <button className="btn primary" type="submit" disabled={busy}><ShieldCheck size={16}/>{mine?.status==='approved'?'신청 상태 확인':'참여 신청'}</button>
       </form>
-      <p className="tiny">참여 부 변경은 재승인이 필요합니다. 승인 전에는 새로 선택한 부의 방을 이용할 수 없습니다.</p>
+      
     </div>}
     {isAdmin && <>
       <div className="access-admin-summary"><span><Users size={16}/> 신청 {requests.length}건</span><span><Clock size={16}/> 대기 {requests.filter(r=>r.status==='pending').length}건</span><span><BadgeCheck size={16}/> 부 구분된 방 {(rooms||[]).filter(r=>r.event_part).length}개</span></div>
