@@ -37,6 +37,24 @@ export default function RoomAccess({ supabase, session, isAdmin, rooms, onRefres
   }
   useEffect(() => { load(); }, [session?.user?.id, isAdmin, rooms?.length]);
 
+  // Keep the member-facing approval status current while the page is open.
+  useEffect(() => {
+    if (!session?.user?.id || !supabase || isAdmin) return;
+    let cancelled = false;
+    const refreshOwnStatus = async () => {
+      const { data, error } = await supabase.from('room_access_requests')
+        .select('*').eq('user_id', session.user.id).maybeSingle();
+      if (!cancelled && !error) setMine(data || null);
+    };
+    const timer = window.setInterval(refreshOwnStatus, 5000);
+    window.addEventListener('focus', refreshOwnStatus);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshOwnStatus);
+    };
+  }, [session?.user?.id, isAdmin, supabase]);
+
   async function runRpc(fn, args, fallback) {
     setBusy(true); setError(''); setNotice('');
     try {
@@ -53,12 +71,19 @@ export default function RoomAccess({ supabase, session, isAdmin, rooms, onRefres
     <div className="panelhead"><div><h3><LockKeyhole size={18} style={{verticalAlign:'-3px',marginRight:8}}/>참여 신청</h3><p className="tiny">참여 신청 후 관리자 승인 시 경매방과 점수 팀배정방을 이용할 수 있습니다.</p></div><button className="btn ghost" onClick={load} disabled={busy}><RefreshCw size={15}/></button></div>
     {error && <div className="alert">{error}</div>}{notice && <div className="success">{notice}</div>}
     {!isAdmin && <div className="access-application">
-      <div className="access-status"><span className="access-status-icon"><Users size={20}/></span><div><strong>참여 신청</strong><p className="tiny">참여 신청 후 관리자의 승인을 받으면 이용할 수 있습니다.</p></div></div>
-      {mine && <p className="access-current">신청 상태: <span className={'access-state '+mine.status}>{statusNames[mine.status] || mine.status}</span></p>}
-      <form className="access-form" onSubmit={e=>{e.preventDefault();runRpc('submit_room_access_request',{p_requested_part:part},'참여 신청을 제출했습니다.')}}>
-        <button className="btn primary" type="submit" disabled={busy}><ShieldCheck size={16}/>{mine?.status==='approved'?'신청 상태 확인':'참여 신청'}</button>
-      </form>
-      
+      {mine?.status === 'approved' ? <>
+        <div className="access-status access-approved-notice" role="status" aria-live="polite">
+          <span className="access-status-icon"><BadgeCheck size={22}/></span>
+          <div><strong>참여 승인 완료</strong><p>관리자가 참여 신청을 승인했습니다. 이제 경매방과 점수 팀배정방을 이용할 수 있습니다.</p></div>
+        </div>
+        <p className="access-current">신청 상태: <span className="access-state approved">승인 완료 ✓</span></p>
+      </> : <>
+        <div className="access-status"><span className="access-status-icon"><Users size={20}/></span><div><strong>참여 신청</strong><p className="tiny">참여 신청 후 관리자의 승인을 받으면 이용할 수 있습니다.</p></div></div>
+        {mine && <p className="access-current">신청 상태: <span className={'access-state '+mine.status}>{statusNames[mine.status] || mine.status}</span></p>}
+        <form className="access-form" onSubmit={e=>{e.preventDefault();runRpc('submit_room_access_request',{p_requested_part:part},'참여 신청을 제출했습니다.')}}>
+          <button className="btn primary" type="submit" disabled={busy}><ShieldCheck size={16}/>{mine?.status==='pending'?'신청 상태 확인':mine?.status==='rejected'?'다시 신청하기':'참여 신청'}</button>
+        </form>
+      </>}
     </div>}
     {isAdmin && <>
       <div className="access-admin-summary"><span><Users size={16}/> 신청 {requests.length}건</span><span><Clock size={16}/> 대기 {requests.filter(r=>r.status==='pending').length}건</span><span><BadgeCheck size={16}/> 부 구분된 방 {(rooms||[]).filter(r=>r.event_part).length}개</span></div>
