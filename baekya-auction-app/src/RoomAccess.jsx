@@ -31,7 +31,7 @@ export default function RoomAccess({ supabase, session, isAdmin, rooms, onRefres
           if (!p.error) names = Object.fromEntries((p.data || []).map(x => [x.id, x.discord_username]));
         }
         setRequests((all.data || []).map(x => ({ ...x, discord_username: names[x.user_id] })));
-        setParts(Object.fromEntries((rooms || []).map(r => [r.id, r.event_part || ''])));
+        setParts(prev => Object.fromEntries((rooms || []).map(r => [r.id, prev[r.id] ?? r.event_part ?? ''])));
       }
     } catch (e) { setError(e.message || '신청 정보를 불러오지 못했습니다.'); }
     finally { setBusy(false); }
