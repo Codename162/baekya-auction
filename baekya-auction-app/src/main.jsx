@@ -190,7 +190,8 @@ function App() {
       if (cancelled) return;
       if (roomsError) { setError('경매방 목록을 불러오지 못했습니다: ' + roomsError.message); return; }
       setRooms(data || []);
-      if (data?.length && !data.some(r => r.id === roomId)) setRoomId(data.find(r => r.id === defaultRoomId)?.id || data[0].id);
+      if (!data?.length) { setRoomId(''); setRoom(null); setTeams([]); setPlayers([]); setBids([]); setHistory([]); setAuctionStats(null); }
+      else if (!data.some(r => r.id === roomId)) setRoomId(data.find(r => r.id === defaultRoomId)?.id || data[0].id);
     })();
     return () => { cancelled = true; };
   }, [session]);
@@ -274,8 +275,9 @@ function App() {
     const { data, error: roomsError } = await supabase.from('rooms').select('id,name,status,created_at,room_type').order('created_at', { ascending: false });
     if (roomsError) throw roomsError;
     setRooms(data || []);
-    if (preferredId && data?.some(r => r.id === preferredId)) setRoomId(preferredId);
-    else if (data?.length && !data.some(r => r.id === roomId)) setRoomId(data[0].id);
+    if (!data?.length) { setRoomId(''); setRoom(null); setTeams([]); setPlayers([]); setBids([]); setHistory([]); setAuctionStats(null); }
+    else if (preferredId && data.some(r => r.id === preferredId)) setRoomId(preferredId);
+    else if (!data.some(r => r.id === roomId)) setRoomId(data[0].id);
   }
   async function createRoom(e) {
     e.preventDefault(); const name = newRoomName.trim();
