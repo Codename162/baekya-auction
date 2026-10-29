@@ -69,7 +69,7 @@ export default function RoomAccess({ supabase, session, isAdmin, rooms, onRefres
         <div className="access-request-info"><strong>{req.discord_username || req.user_id}</strong><small>{partNames[req.requested_part] || req.requested_part} · {statusNames[req.status] || req.status}</small><small>{req.submitted_at ? new Date(req.submitted_at).toLocaleString('ko-KR') : ''}</small></div>
         {req.status==='pending' && <div className="access-request-actions"><button className="btn primary" disabled={busy} onClick={()=>runRpc('review_room_access_request',{p_request_id:req.id,p_status:'approved'},'신청을 승인했습니다.')}>승인</button><button className="btn ghost" disabled={busy} onClick={()=>runRpc('review_room_access_request',{p_request_id:req.id,p_status:'rejected'},'신청을 반려했습니다.')}>반려</button></div>}
       </article>)}</div>}
-      <h4 className="access-subtitle">방별 참여 부 지정</h4><p className="tiny">1부·2부 경매방과 점수 팀배정방을 각각 지정해 주세요. 미지정 방은 기존 접근 방식을 유지합니다.</p>
+      <h4 className="access-subtitle">방별 참여 부 지정</h4><p className="tiny">1부·2부 경매방과 점수 팀배정방을 각각 지정해 주세요. 미지정 방은 관리자에게만 표시되며 일반 회원은 접근할 수 없습니다.</p>
       <div className="access-room-list">{(rooms||[]).map(room=><div className="access-room-row" key={room.id}>
         <div><strong>{room.name}</strong><small>{room.room_type==='balance'?'점수 팀배정방':'경매방'} · {room.status==='finished'?'종료':room.status==='running'?'진행 중':room.status==='paused'?'일시정지':'준비'}</small></div>
         <select aria-label={room.name+' 참여 부'} value={parts[room.id] ?? room.event_part ?? ''} onChange={e=>setParts(prev=>({...prev,[room.id]:e.target.value}))}><option value="">미지정(기존 접근)</option><option value="part1">1부</option><option value="part2">2부</option></select>
