@@ -62,8 +62,8 @@ export default function AccountSettings({ supabase, session, profile, onSaved })
       {error && <div className="alert" role="alert">{error}</div>}
       {notice && <div className="success" role="status"><BadgeCheck size={16} style={{verticalAlign:'-3px',marginRight:6}}/>{notice}</div>}
       <form className="adminform" onSubmit={save}>
-        <div className="account-profile-preview">
-          {avatarUrl.trim() ? <img src={avatarUrl.trim()} alt="프로필 미리보기" onError={e=>{e.currentTarget.style.display='none';}} /> : <span><UserRound size={30}/></span>}
+        <div className="account-profile-preview" style={{display:"flex",alignItems:"center",gap:14,padding:16,marginBottom:18,border:"1px solid rgba(166,154,255,.22)",borderRadius:14,background:"rgba(166,154,255,.06)"}}>
+          {avatarUrl.trim() ? <img src={avatarUrl.trim()} alt="프로필 미리보기" style={{width:64,height:64,objectFit:"cover",borderRadius:"50%",flexShrink:0}} onError={e=>{e.currentTarget.style.display='none';}} /> : <span style={{width:64,height:64,borderRadius:"50%",display:"grid",placeItems:"center",background:"rgba(166,154,255,.16)",flexShrink:0}}><UserRound size={30}/></span>}
           <div><strong>{name.trim() || '표시 이름'}</strong><small>{session?.user?.email || 'Discord 계정으로 로그인됨'}</small></div>
         </div>
         <label className="field">표시 이름<input value={name} onChange={e=>setName(e.target.value)} minLength={2} maxLength={32} placeholder="사이트에 표시할 이름" required /></label>
