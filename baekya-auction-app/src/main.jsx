@@ -189,10 +189,18 @@ function App() {
     if (!session || !supabase) return;
     let cancelled = false;
     (async () => {
-      const { data, error: roomsError } = await supabase.from('rooms').select('id,name,status,created_at,room_type,event_part,teams(count)').order('created_at', { ascending: false });
+      const [{ data, error: roomsError }, { data: teamRows, error: teamCountError }] = await Promise.all([
+        supabase.from('rooms').select('id,name,status,created_at,room_type,event_part').order('created_at', { ascending: false }),
+        supabase.from('teams').select('room_id')
+      ]);
       if (cancelled) return;
       if (roomsError) { setError('경매방 목록을 불러오지 못했습니다: ' + roomsError.message); return; }
-      const roomRows = (data || []).map(r => ({ ...r, team_count: r.teams?.[0]?.count ?? 3 }));
+      if (teamCountError) { setError('팀 수 정보를 불러오지 못했습니다: ' + teamCountError.message); return; }
+      const teamCounts = (teamRows || []).reduce((counts, team) => {
+        counts[team.room_id] = (counts[team.room_id] || 0) + 1;
+        return counts;
+      }, {});
+      const roomRows = (data || []).map(r => ({ ...r, team_count: teamCounts[r.id] ?? 3 }));
       setRooms(roomRows);
       setRoomTeamCountInputs(prev => ({ ...prev, ...Object.fromEntries(roomRows.map(r => [r.id, String(r.team_count)])) }));
       if (!data?.length) { setRoomId(''); setRoom(null); setTeams([]); setPlayers([]); setBids([]); setHistory([]); setAuctionStats(null); }
@@ -302,9 +310,17 @@ function App() {
     finally { setBusy(false); }
   }
   async function refreshRooms(preferredId) {
-    const { data, error: roomsError } = await supabase.from('rooms').select('id,name,status,created_at,room_type,event_part,teams(count)').order('created_at', { ascending: false });
+    const [{ data, error: roomsError }, { data: teamRows, error: teamCountError }] = await Promise.all([
+      supabase.from('rooms').select('id,name,status,created_at,room_type,event_part').order('created_at', { ascending: false }),
+      supabase.from('teams').select('room_id')
+    ]);
     if (roomsError) throw roomsError;
-    const roomRows = (data || []).map(r => ({ ...r, team_count: r.teams?.[0]?.count ?? 3 }));
+    if (teamCountError) throw teamCountError;
+    const teamCounts = (teamRows || []).reduce((counts, team) => {
+      counts[team.room_id] = (counts[team.room_id] || 0) + 1;
+      return counts;
+    }, {});
+    const roomRows = (data || []).map(r => ({ ...r, team_count: teamCounts[r.id] ?? 3 }));
     setRooms(roomRows);
     setRoomTeamCountInputs(prev => ({ ...prev, ...Object.fromEntries(roomRows.map(r => [r.id, String(r.team_count)])) }));
     if (!data?.length) { setRoomId(''); setRoom(null); setTeams([]); setPlayers([]); setBids([]); setHistory([]); setAuctionStats(null); }
