@@ -72,7 +72,7 @@ export default function PlayerProfiles({ supabase, roomId, room, players = [], t
     return () => { cancelled = true; };
   }, [supabase, roomId]);
 
-  const cards = useMemo(() => players.filter(p => !p.is_captain).map(player => {
+  const cards = useMemo(() => players.filter(p => !p.is_captain && p.status !== 'withdrawn').map(player => {
     const auctionRecords = history.filter(h => h.player_id === player.id);
     const soldRecord = auctionRecords.find(h => h.team_id === player.team_id) || auctionRecords[0];
     const mvpCount = tournamentResults.filter(r => (r.mvp || '').trim().toLowerCase() === player.name.trim().toLowerCase()).length;
