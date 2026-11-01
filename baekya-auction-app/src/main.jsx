@@ -540,6 +540,7 @@ function App() {
 }
 
 function PublicDashboard({ room, rooms, teams, players, history, onNavigate }) {
+  const activeRoomPlayers = players.filter(p => p.status !== 'withdrawn');
   const isRoomCaptain = p => !!p.discord_user_id && teams.some(t => t.captain_user_id === p.discord_user_id);
   const auctionPlayers = players.filter(p => !p.is_captain && !isRoomCaptain(p));
   const sold = auctionPlayers.filter(p => p.status === 'sold').length;
@@ -550,7 +551,7 @@ function PublicDashboard({ room, rooms, teams, players, history, onNavigate }) {
       <span className={'status ' + (room?.status === 'running' ? 'live' : '')}>{room?.status === 'running' ? '● 진행 중' : room?.status === 'paused' ? '● 일시정지' : room?.status === 'finished' ? '● 종료' : '● 준비 중'}</span>
     </div>
     <div className="dashboard-metrics">
-      <div className="stat"><div className="stat-icon"><ContactRound/></div><small>현재 방 참가자</small><strong>{players.length}명</strong><span>팀장 포함</span></div>
+      <div className="stat"><div className="stat-icon"><ContactRound/></div><small>현재 방 참가자</small><strong>{activeRoomPlayers.length}명</strong><span>팀장 포함 · 제외 인원 미포함</span></div>
       <div className="stat"><div className="stat-icon"><Zap/></div><small>경매 대기</small><strong>{waiting}명</strong><span>영입 대기 선수</span></div>
       <div className="stat"><div className="stat-icon"><BadgeCheck/></div><small>낙찰 완료</small><strong>{sold}명</strong><span>현재 방 기준</span></div>
       <div className="stat"><div className="stat-icon"><Crown/></div><small>구성된 팀</small><strong>{teams.length}팀</strong><span>현재 방 기준</span></div>
