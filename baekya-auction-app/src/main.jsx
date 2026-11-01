@@ -212,6 +212,30 @@ function App() {
     })();
     return () => { cancelled = true; };
   }, [session]);
+  // Load the signed-in user's profile independently of room selection.
+  // Admin permissions must still resolve when there are currently no rooms.
+  useEffect(() => {
+    if (!session?.user?.id || !supabase) {
+      setProfile(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (profileError) {
+        setError('계정 권한 정보를 불러오지 못했습니다: ' + profileError.message);
+        return;
+      }
+      setProfile(data || null);
+    })();
+    return () => { cancelled = true; };
+  }, [session?.user?.id]);
+
   useEffect(() => { if (session && supabase && roomId) loadAll(); }, [session, roomId, activeSection]);
 
   useEffect(() => {
