@@ -31,3 +31,30 @@ test('detects sold players without a team and missing active auction player', ()
   assert.equal(checks.find((item) => item.id === 'unassigned').level, 'error');
   assert.equal(checks.find((item) => item.id === 'auction').level, 'error');
 });
+
+test('flags duplicate captains, invalid team links, and negative budgets', () => {
+  const checks = buildOperationsChecks({
+    room: { id: 'r1', status: 'setup', team_size: 5 },
+    rooms: [{ id: 'r1' }],
+    teams: [
+      { id: 't1', name: '1팀', captain_user_id: 'u1', budget: 30 },
+      { id: 't2', name: '2팀', captain_user_id: 'u1', budget: -1 }
+    ],
+    players: [{ id: 'p1', name: '잘못된 소속', status: 'available', team_id: 'missing-team' }],
+    history: [], profiles: []
+  });
+  assert.equal(checks.find((item) => item.id === 'captain-duplicates').level, 'error');
+  assert.equal(checks.find((item) => item.id === 'team-links').level, 'error');
+  assert.equal(checks.find((item) => item.id === 'budget').level, 'error');
+});
+
+test('treats a running auction without a valid auctioning player as an error', () => {
+  const checks = buildOperationsChecks({
+    room: { id: 'r1', status: 'running', current_player_id: 'p1', team_size: 5 },
+    rooms: [{ id: 'r1' }],
+    teams: [{ id: 't1', name: '1팀', captain_user_id: 'u1' }, { id: 't2', name: '2팀', captain_user_id: 'u2' }],
+    players: [{ id: 'p1', name: '대기 선수', status: 'available' }],
+    history: [], profiles: [{ id: 'u1' }]
+  });
+  assert.equal(checks.find((item) => item.id === 'auction').level, 'error');
+});
