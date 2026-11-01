@@ -14,7 +14,7 @@ function downloadJson(name, value) {
   URL.revokeObjectURL(url);
 }
 
-export default function RoomTools({ supabase, roomId, room, isAdmin }) {
+export default function RoomTools({ supabase, roomId, room, isAdmin, onRefresh }) {
   const [backups, setBackups] = useState([]);
   const [logs, setLogs] = useState([]);
   const [label, setLabel] = useState('');
@@ -62,6 +62,7 @@ export default function RoomTools({ supabase, roomId, room, isAdmin }) {
       if (rpcError) throw rpcError;
       setNotice(typeof data === 'string' ? data : '백업 복구를 완료했습니다.');
       await load();
+      if (onRefresh) await onRefresh();
     } catch (e) { setError(e.message || '백업 복구에 실패했습니다.'); }
     finally { setBusy(''); }
   }
@@ -75,7 +76,7 @@ export default function RoomTools({ supabase, roomId, room, isAdmin }) {
       <div className="panelhead"><div><h3><Archive size={17}/> 방 백업</h3><p className="tiny">선수·팀·예산·입찰·낙찰·대회 전적·이벤트 공지를 저장합니다.</p></div><span className="pill">{backups.length}개 백업</span></div>
       <form className="room-backup-form" onSubmit={createBackup}><label className="field">백업 이름<input value={label} onChange={e=>setLabel(e.target.value)} placeholder="예: 롤 내전 시작 전 백업" maxLength={100}/></label><button className="btn primary" type="submit" disabled={!!busy || !roomId || room?.status === 'running'}><Archive size={15}/>{busy === 'create' ? '백업 중…' : '지금 백업하기'}</button></form>
       {room?.status === 'running' && <p className="tiny room-tool-warning">경매 진행 중에는 백업할 수 없습니다. 먼저 경매를 일시정지하거나 종료해 주세요.</p>}
-      <p className="tiny">백업은 서버에 저장되며, 저장된 스냅샷을 JSON 파일로 내려받을 수 있습니다. 최대 최근 30개 백업을 목록에 표시합니다.</p>
+      <p className="tiny">백업은 서버에 저장되며 JSON으로 내려받을 수 있습니다. 복구를 실행하면 현재 방 상태를 먼저 자동 백업한 뒤 선택한 시점으로 교체합니다. 복구가 실패하면 자동 백업과 기존 데이터도 함께 롤백됩니다. 최근 30개 백업을 표시합니다.</p>
       <div className="room-tool-list">{backups.map(item=><article className="room-tool-row" key={item.id}><div className="grow"><strong>{item.label}</strong><small>{new Date(item.created_at).toLocaleString('ko-KR')}</small><small>{Array.isArray(item.snapshot?.players) ? item.snapshot.players.length : 0}명 · {Array.isArray(item.snapshot?.teams) ? item.snapshot.teams.length : 0}팀</small></div><div className="room-tool-actions"><button className="btn ghost" type="button" onClick={()=>downloadJson('baekya-backup-'+item.id+'.json',item.snapshot)}><Download size={14}/> JSON</button><button className="btn danger" type="button" disabled={!!busy || room?.status === 'running'} onClick={()=>restoreBackup(item)}><RotateCcw size={14}/>{busy===item.id?'복구 중…':'복구'}</button></div></article>)}
       {!backups.length && !loading && <div className="empty">저장된 백업이 없습니다.</div>}</div>
     </div>
