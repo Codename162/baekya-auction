@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createClient } from '@supabase/supabase-js';
-import { Orbit, Zap, ContactRound, Gem, Shield, LogOut, RefreshCw, Plus, Play, Pause, BadgeCheck, History, SlidersHorizontal, CircleAlert, Crown, Megaphone, Activity, LockKeyhole } from 'lucide-react';
+import { Orbit, Zap, ContactRound, Gem, Shield, Clock, LogOut, RefreshCw, Plus, Play, Pause, BadgeCheck, History, SlidersHorizontal, CircleAlert, Crown, Megaphone, Activity, LockKeyhole } from 'lucide-react';
 import './style.css';
 import SpectatorEvents from './SpectatorEvents.jsx';
 import TeamBalance from './TeamBalance.jsx';
