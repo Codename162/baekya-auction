@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Clock, LockKeyhole, RefreshCw, X } from 'lucide-react';
 
-export default function RoomAccess({ supabase, session, isAdmin, rooms = [] }) {
+export default function RoomAccess({ supabase, session, isAdmin, rooms = [], onRoomSelect }) {
   const [selectedRoom, setSelectedRoom] = useState('');
   const [requests, setRequests] = useState([]);
   const [profiles, setProfiles] = useState({});
@@ -74,7 +74,7 @@ export default function RoomAccess({ supabase, session, isAdmin, rooms = [] }) {
     <div className="panel room-access-intro">
       <div className="panelhead"><div><p className="eyebrow">BAEKYA ROOM ACCESS</p><h3>{isAdmin ? '방 참여 승인 관리' : '참여할 방 선택'}</h3><p className="muted">{isAdmin ? '각 방에 들어오려는 멤버의 신청을 확인하고 승인할 수 있습니다.' : '참여할 방을 선택해 신청해 주세요. 승인되면 해당 방의 선수와 팀 정보를 이용할 수 있습니다.'}</p></div><span className="pill"><LockKeyhole size={14}/> 방별 승인</span></div>
       {!isAdmin && <>
-        <label className="field">참여할 방<select value={selectedRoom} onChange={event => { setSelectedRoom(event.target.value); setError(''); setNotice(''); }}><option value="">방을 선택해 주세요</option>{rooms.map(room => <option key={room.id} value={room.id}>{room.name} · {room.room_type === 'balance' ? '점수 팀배정' : '선수 경매'}</option>)}</select></label>
+        <label className="field">참여할 방<select value={selectedRoom} onChange={event => { setSelectedRoom(event.target.value); onRoomSelect?.(event.target.value); setError(''); setNotice(''); }}><option value="">방을 선택해 주세요</option>{rooms.map(room => <option key={room.id} value={room.id}>{room.name} · {room.room_type === 'balance' ? '점수 팀배정' : '선수 경매'}</option>)}</select></label>
         {selected && <div className="room-access-selected"><div><strong>{selected.name}</strong><small>{selected.room_type === 'balance' ? '점수 팀배정방' : '선수 경매방'} · {selected.status === 'finished' ? '종료' : selected.status === 'running' ? '진행 중' : selected.status === 'paused' ? '일시정지' : '준비'}</small></div><span className={'room-access-status ' + statusClass(myRequest?.status)}>{statusText(myRequest?.status)}</span></div>}
         <button type="button" className="btn primary" disabled={busy || !selectedRoom || myRequest?.status === 'approved' || myRequest?.status === 'pending'} onClick={submitRequest}>{busy ? '처리 중…' : myRequest?.status === 'rejected' ? '다시 신청하기' : myRequest?.status === 'approved' ? '승인 완료' : myRequest?.status === 'pending' ? '승인 대기 중' : '이 방 참여 신청'}</button>
         <div className="room-access-history"><h4>내 방 신청 현황</h4>{myRequests.length ? myRequests.map(item => { const room = rooms.find(row => row.id === item.room_id); return <div className="room-access-request-row" key={item.id}><div className="grow"><strong>{room?.name || '삭제된 방'}</strong><small>{new Date(item.created_at).toLocaleString('ko-KR')}</small></div><span className={'room-access-status ' + statusClass(item.status)}>{statusText(item.status)}</span></div>; }) : <div className="empty">아직 신청한 방이 없습니다.</div>}</div>
