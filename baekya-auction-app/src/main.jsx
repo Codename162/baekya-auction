@@ -194,7 +194,7 @@ function App() {
     let cancelled = false;
     (async () => {
       const [{ data, error: roomsError }, { data: teamRows, error: teamCountError }] = await Promise.all([
-        supabase.from('rooms').select('id,name,status,created_at,room_type,event_part').order('created_at', { ascending: false }),
+        supabase.from('rooms').select('id,name,status,created_at,room_type').order('created_at', { ascending: false }),
         supabase.from('teams').select('room_id')
       ]);
       if (cancelled) return;
@@ -315,7 +315,7 @@ function App() {
   }
   async function refreshRooms(preferredId) {
     const [{ data, error: roomsError }, { data: teamRows, error: teamCountError }] = await Promise.all([
-      supabase.from('rooms').select('id,name,status,created_at,room_type,event_part').order('created_at', { ascending: false }),
+      supabase.from('rooms').select('id,name,status,created_at,room_type').order('created_at', { ascending: false }),
       supabase.from('teams').select('room_id')
     ]);
     if (roomsError) throw roomsError;
@@ -498,7 +498,7 @@ function App() {
         <button type="button" className={activeSection === 'balance' ? 'feature-tab active' : 'feature-tab'} onClick={() => navigateSection('balance')}><ContactRound size={17}/><span>점수 팀배정</span><small>총점 균형 맞추기</small></button>
         <button type="button" className={activeSection === 'events' ? 'feature-tab active' : 'feature-tab'} onClick={() => navigateSection('events') }><Gem size={17}/><span>관전 이벤트</span><small>승리 팀 · MVP 예측</small></button>
         <button type="button" className={activeSection === 'account' ? 'feature-tab active' : 'feature-tab'} onClick={() => navigateSection('account')}><ContactRound size={17}/><span>내 프로필</span><small>닉네임 · 프로필 사진</small></button>
-        <button type="button" className={activeSection === 'access' ? 'feature-tab active' : 'feature-tab'} onClick={() => navigateSection('access')}><LockKeyhole size={17}/><span>참여 신청</span><small>1부 · 2부 방 권한</small></button>
+        <button type="button" className={activeSection === 'access' ? 'feature-tab active' : 'feature-tab'} onClick={() => navigateSection('access')}><LockKeyhole size={17}/><span>참여 신청</span><small>방 이용 권한</small></button>
         <button type="button" className={activeSection === 'announcements' ? 'feature-tab active' : 'feature-tab'} onClick={() => navigateSection('announcements')}><Megaphone size={17}/><span>이벤트 게시판</span><small>공지 · 일정 · 모집</small></button>
       </nav>
       {isAdmin && <div className="admin-navigation">
@@ -590,79 +590,30 @@ function PublicDashboard({ room, rooms, teams, players, history, onNavigate }) {
   </section>;
 }
 
-function AdminDashboard({ supabase, room, rooms, teams, players, allPlayers, profiles, history, activePlayers, onNavigate }) {
-  const [requests, setRequests] = useState([]);
-  const [requestsLoading, setRequestsLoading] = useState(true);
-  useEffect(() => {
-    let cancelled = false;
-    const loadRequests = async () => {
-      const { data, error } = await supabase.from('room_access_requests').select('id,requested_part,status');
-      if (!cancelled && !error) setRequests(data || []);
-      if (!cancelled) setRequestsLoading(false);
-    };
-    loadRequests();
-    const timer = window.setInterval(loadRequests, 15000);
-    return () => { cancelled = true; window.clearInterval(timer); };
-  }, [supabase]);
-  const partStats = ['part1', 'part2'].map(part => {
-    const partRooms = rooms.filter(item => item.event_part === part);
-    const roomIds = new Set(partRooms.map(item => item.id));
-    const members = allPlayers.filter(player => roomIds.has(player.room_id) && player.status !== 'withdrawn' && !player.is_captain);
-    const partRequests = requests.filter(item => item.requested_part === part);
-    return { part, label: part === 'part1' ? '1부' : '2부', rooms: partRooms, members: members.length,
-      pending: partRequests.filter(item => item.status === 'pending').length,
-      approved: partRequests.filter(item => item.status === 'approved').length,
-      rejected: partRequests.filter(item => item.status === 'rejected').length };
-  });
-  const pendingTotal = requests.filter(item => item.status === 'pending').length;
+function AdminDashboard({ rooms, allPlayers, history, onNavigate }) {
   const runningRooms = rooms.filter(item => item.status === 'running').length;
   const finishedRooms = rooms.filter(item => item.status === 'finished').length;
   const statusLabel = status => ({ setup: '준비', running: '진행 중', paused: '일시정지', finished: '종료' }[status] || '미확인');
   return <section className="admin-dashboard">
-    <div className="dashboard-welcome panel">
-      <div><p className="eyebrow">BAEKYA ADMIN CONTROL</p><h3>백야 운영 현황</h3><p className="muted">1부와 2부 신청부터 참가자 관리, 대회 진행까지 한 화면에서 확인합니다.</p></div>
-      <span className="status live">● 실시간 운영 현황</span>
-    </div>
+    <div className="dashboard-welcome panel"><div><p className="eyebrow">BAEKYA ADMIN CONTROL</p><h3>백야 운영 현황</h3><p className="muted">참가자 관리와 대회 진행 상황을 한 화면에서 확인합니다.</p></div><span className="status live">● 실시간 운영 현황</span></div>
     <div className="dashboard-metrics">
       <div className="stat"><div className="stat-icon"><ContactRound/></div><small>전체 참가자</small><strong>{allPlayers.filter(p => !p.is_captain && p.status !== 'withdrawn').length}명</strong><span>모든 방 기준</span></div>
-      <div className="stat"><div className="stat-icon"><Clock/></div><small>승인 대기</small><strong>{requestsLoading ? '—' : pendingTotal + '건'}</strong><span>1부 · 2부 신청</span></div>
+      <div className="stat"><div className="stat-icon"><Clock/></div><small>전체 방</small><strong>{rooms.length}개</strong><span>운영 중인 방 포함</span></div>
       <div className="stat"><div className="stat-icon"><Activity/></div><small>진행 중인 방</small><strong>{runningRooms}개</strong><span>전체 {rooms.length}개 방</span></div>
       <div className="stat"><div className="stat-icon"><BadgeCheck/></div><small>종료된 방</small><strong>{finishedRooms}개</strong><span>기록 보관 중</span></div>
     </div>
-    <div className="panel dashboard-recent">
-      <div className="panelhead"><div><h3>부별 신청 · 참가 현황</h3><p className="tiny">1부와 2부의 신청 및 승인 현황을 따로 집계합니다.</p></div><button type="button" className="btn primary" onClick={() => onNavigate('access')}>신청 승인 관리</button></div>
-      <div className="division-overview-grid">
-        {partStats.map(item => <article className="division-overview-card" key={item.part}>
-          <div className="division-overview-head"><div><p className="eyebrow">BAEKYA DIVISION</p><h3>{item.label}</h3></div><span className="pill">{item.rooms.length}개 방</span></div>
-          <div className="division-overview-numbers"><div><small>승인 완료</small><strong>{requestsLoading ? '—' : item.approved}건</strong></div><div><small>승인 대기</small><strong>{requestsLoading ? '—' : item.pending}건</strong></div><div><small>참가 선수</small><strong>{item.members}명</strong></div></div>
-          <div className="division-overview-footer"><span>반려 {requestsLoading ? '—' : item.rejected}건</span><button type="button" className="btn ghost" onClick={() => onNavigate('access')}>신청 확인 →</button></div>
-        </article>)}
-      </div>
-    </div>
-    <div className="panel dashboard-recent">
-      <div className="panelhead"><div><h3>전체 방 진행 상황</h3><p className="tiny">방을 선택하면 해당 방의 경매 또는 점수 팀배정 화면으로 바로 이동합니다.</p></div><button type="button" className="btn ghost" onClick={() => onNavigate('rooms')}>방 관리</button></div>
-      {rooms.length ? <div className="admin-room-overview-list">{rooms.map(item => {
-        const roomPlayers = allPlayers.filter(player => player.room_id === item.id && player.status !== 'withdrawn' && !player.is_captain);
-        return <article className="admin-room-overview-row" key={item.id}>
-          <div className="admin-room-overview-icon">{item.room_type === 'balance' ? <ContactRound/> : <Zap/>}</div>
-          <div className="grow"><strong>{item.name}</strong><small>{item.event_part === 'part1' ? '1부' : item.event_part === 'part2' ? '2부' : '부 미지정'} · {item.room_type === 'balance' ? '점수 팀배정' : '선수 경매'} · 참가자 {roomPlayers.length}명</small></div>
-          <span className={'room-selection-status ' + (item.status === 'running' ? 'running' : '')}>{statusLabel(item.status)}</span>
-          <button type="button" className="btn ghost" onClick={() => onNavigate(item.room_type === 'balance' ? 'balance' : 'auction', item.id)}>열기</button>
-        </article>;
-      })}</div> : <div className="empty">생성된 방이 없습니다. 방 관리에서 첫 대회 방을 만들어 주세요.</div>}
+    <div className="panel dashboard-recent"><div className="panelhead"><div><h3>전체 방 진행 상황</h3><p className="tiny">방을 선택하면 해당 방의 경매 또는 점수 팀배정 화면으로 바로 이동합니다.</p></div><button type="button" className="btn ghost" onClick={() => onNavigate('rooms')}>방 관리</button></div>
+      {rooms.length ? <div className="admin-room-overview-list">{rooms.map(item => { const roomPlayers = allPlayers.filter(player => player.room_id === item.id && player.status !== 'withdrawn' && !player.is_captain); return <article className="admin-room-overview-row" key={item.id}><div className="admin-room-overview-icon">{item.room_type === 'balance' ? <ContactRound/> : <Zap/>}</div><div className="grow"><strong>{item.name}</strong><small>{item.room_type === 'balance' ? '점수 팀배정' : '선수 경매'} · 참가자 {roomPlayers.length}명</small></div><span className={'room-selection-status ' + (item.status === 'running' ? 'running' : '')}>{statusLabel(item.status)}</span><button type="button" className="btn ghost" onClick={() => onNavigate(item.room_type === 'balance' ? 'balance' : 'auction', item.id)}>열기</button></article>; })}</div> : <div className="empty">생성된 방이 없습니다. 방 관리에서 첫 대회 방을 만들어 주세요.</div>}
     </div>
     <div className="dashboard-grid">
       <button type="button" className="dashboard-action panel" onClick={() => onNavigate('members')}><ContactRound/><strong>참가자 · 멤버 관리</strong><span>현재 방 선수, 등급, 팀장 지정 관리</span></button>
-      <button type="button" className="dashboard-action panel" onClick={() => onNavigate('rooms')}><Plus/><strong>대회 방 관리</strong><span>1부·2부 경매방과 팀배정방 생성</span></button>
+      <button type="button" className="dashboard-action panel" onClick={() => onNavigate('rooms')}><Plus/><strong>대회 방 관리</strong><span>경매방과 팀배정방 생성 및 관리</span></button>
       <button type="button" className="dashboard-action panel" onClick={() => onNavigate('ops')}><Activity/><strong>운영 점검 센터</strong><span>대회 시작 전 누락 항목과 진행 상태 확인</span></button>
       <button type="button" className="dashboard-action panel" onClick={() => onNavigate('tools')}><History/><strong>기록 · 백업</strong><span>변경 이력과 방별 데이터 복구</span></button>
       <button type="button" className="dashboard-action panel" onClick={() => onNavigate('tournament')}><Crown/><strong>대회 결과 관리</strong><span>경기 결과, 순위, MVP 기록</span></button>
       <button type="button" className="dashboard-action panel" onClick={() => onNavigate('events')}><Gem/><strong>관전 이벤트</strong><span>승리 팀과 MVP 예측 현황</span></button>
     </div>
-    <div className="panel dashboard-recent">
-      <div className="panelhead"><h3>최근 낙찰 기록</h3><button type="button" className="btn ghost" onClick={() => onNavigate('auction')}>경매 현황 보기</button></div>
-      {history.length ? <div className="playerlist">{history.slice(0,5).map(h=><div className="playerrow" key={h.id}><div className={'grade ' + (h.grade || 'B')}>{h.grade || '—'}</div><div className="grow"><strong>{h.player_name} → {h.team_name}</strong><small>{new Date(h.created_at).toLocaleString('ko-KR')}</small></div><strong className="winning">{h.price}P</strong></div>)}</div> : <div className="empty">아직 낙찰 기록이 없습니다.</div>}
-    </div>
+    <div className="panel dashboard-recent"><div className="panelhead"><h3>최근 낙찰 기록</h3><button type="button" className="btn ghost" onClick={() => onNavigate('auction')}>경매 현황 보기</button></div>{history.length ? <div className="playerlist">{history.slice(0,5).map(h=><div className="playerrow" key={h.id}><div className={'grade ' + (h.grade || 'B')}>{h.grade || '—'}</div><div className="grow"><strong>{h.player_name} → {h.team_name}</strong><small>{new Date(h.created_at).toLocaleString('ko-KR')}</small></div><strong className="winning">{h.price}P</strong></div>)}</div> : <div className="empty">아직 낙찰 기록이 없습니다.</div>}</div>
   </section>;
 }
 
