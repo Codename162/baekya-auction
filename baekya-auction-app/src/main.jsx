@@ -39,6 +39,7 @@ function App() {
   const [room, setRoom] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [roomId, setRoomId] = useState('');
+  const [roomAccess, setRoomAccess] = useState(null);
   const [teams, setTeams] = useState([]);
   const [players, setPlayers] = useState([]);
   const [allPlayers, setAllPlayers] = useState([]);
@@ -211,14 +212,26 @@ function App() {
     })();
     return () => { cancelled = true; };
   }, [session]);
-  useEffect(() => { if (session && supabase && roomId) loadAll(); }, [session, roomId]);
+  useEffect(() => { if (session && supabase && roomId) loadAll(); }, [session, roomId, activeSection]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!session?.user?.id || !supabase || !roomId) { setRoomAccess(null); return () => { cancelled = true; }; }
+    if (isAdmin) { setRoomAccess(true); return () => { cancelled = true; }; }
+    setRoomAccess(null);
+    supabase.rpc('has_room_part_access', { p_room_id: roomId }).then(({ data, error: accessError }) => {
+      if (cancelled) return;
+      setRoomAccess(!accessError && data === true);
+    });
+    return () => { cancelled = true; };
+  }, [session, roomId, isAdmin]);
 
   useEffect(() => {
     if (!session?.user?.id || !supabase || !roomId) return;
     const selectedRoom = rooms.find(r => r.id === roomId);
     if (!selectedRoom || selectedRoom.status === 'finished') return;
     const registrationKey = `${session.user.id}:${roomId}`;
-    if (autoRegisteredKey === registrationKey) return;
+    if (autoRegisteredKey === registrationKey || roomAccess !== true) return;
     let cancelled = false;
     (async () => {
       const { data, error: registrationError } = await supabase.rpc('register_discord_player', { p_room_id: roomId });
@@ -236,7 +249,7 @@ function App() {
       await loadAll();
     })();
     return () => { cancelled = true; };
-  }, [session, roomId, rooms, autoRegisteredKey ]);
+  }, [session, roomId, rooms, autoRegisteredKey, roomAccess, activeSection ]);
   useEffect(() => {
     const timer = window.setInterval(() => setTimerNow(Date.now()), 250);
     return () => window.clearInterval(timer);
@@ -502,9 +515,11 @@ function App() {
     {activeSection === 'dashboard' && !isAdmin && <section className="stats"><Stat icon={<ContactRound/>} label="참가자" value={`${players.length}명`} sub="팀장 포함"/><Stat icon={<Zap/>} label="경매 대기" value={`${activePlayers.length}명`} sub="팀장 제외"/><Stat icon={<Gem/>} label="전체 예산" value={`${teams.reduce((n,t)=>n+t.budget,0)}P`} sub="팀별 초기 30P"/><Stat icon={<History/>} label="낙찰 완료" value={`${history.length}명`} sub="기록 저장 중"/></section>}
     {activeSection === 'dashboard' && !isAdmin && <LiveOperationsHub supabase={supabase} roomId={roomId} isAdmin={isAdmin} onNavigate={navigateSection} />}
     <div id="section-workspace" className="section-workspace" style={{scrollMarginTop:'20px'}}>{activeSection !== 'dashboard' && <div className="workspace-toolbar"><button type="button" className="btn ghost section-home-button" onClick={() => navigateSection('dashboard')}><span aria-hidden="true">←</span> 기능 메뉴로 돌아가기</button><span className="workspace-toolbar-label">BAEKYA <span>/</span> {({auction:'선수 경매',balance:'점수 팀배정',profiles:'선수 프로필',account:'내 프로필',tournament:'대회 전적',bracket:'대진표',announcements:'이벤트 공지',members:'멤버 관리',tools:'운영 도구',rooms:'방 관리',ops:'운영 현황'})[activeSection] || '기능'}</span></div>}{activeSection === 'rooms' && isAdmin && <section className="room-management"><div className="panel"><div className="panelhead"><div><h3>{newRoomType === 'balance' ? '새 점수 팀배정방 만들기' : '새 선수 경매방 만들기'}</h3><p className="tiny">경매와 점수 팀배정 방은 각각 독립적으로 생성됩니다.</p></div><span className="pill">{rooms.length}개 방</span></div><form onSubmit={createRoom} className="adminform"><label className="field">방 종류<select value={newRoomType} onChange={e=>setNewRoomType(e.target.value)}><option value="auction">선수 경매방</option><option value="balance">점수 팀배정방</option></select></label><label className="field">방 이름<input value={newRoomName} onChange={e=>setNewRoomName(e.target.value)} placeholder="예: 백야 롤 내전 2회차" maxLength={60} required /></label><label className="field">팀별 예산 (P)<input type="number" min="1" max="500" value={newRoomBudget} onChange={e=>setNewRoomBudget(e.target.value)} required /></label><label className="field">팀당 인원<input type="number" min="2" max="10" value={newRoomTeamSize} onChange={e=>setNewRoomTeamSize(e.target.value)} required /></label><label className="field">팀 수<input type="number" min="2" max="10" value={newRoomTeamCount} onChange={e=>setNewRoomTeamCount(e.target.value)} required /></label><button className="btn primary" disabled={busy}><Plus size={16}/> {newRoomType === 'balance' ? '점수 팀배정방 생성' : '선수 경매방 생성'}</button></form><p className="tiny">{newRoomType === 'balance' ? '점수 팀배정 전용 방이 생성됩니다. 선수 경매 기록과는 분리됩니다.' : '선수 경매 전용 방이 생성됩니다. 점수 팀배정 기록과는 분리됩니다.'} 설정한 팀 수만큼 팀이 자동 생성됩니다.</p></div><div className="panel"><div className="panelhead"><h3>방 목록</h3><span className="pill">{rooms.length}개</span></div>{rooms.length ? <div className="playerlist">{rooms.map(r=><div className="playerrow" key={r.id}><div className="grow"><strong><span className="pill">{r.room_type === 'balance' ? '점수 팀배정' : '선수 경매'}</span></strong><label className="field room-name-edit"><span className="tiny">방 이름</span><input value={roomNameInputs[r.id] ?? r.name} onChange={e=>setRoomNameInputs(prev=>({...prev,[r.id]:e.target.value}))} maxLength={60} aria-label={r.name + ' 방 이름 수정'} /></label><small>{new Date(r.created_at).toLocaleDateString('ko-KR')} 생성 · {r.status==='setup'?'준비':r.status==='running'?'진행 중':r.status==='paused'?'일시정지':'종료'}</small></div><button type="button" className="btn ghost" disabled={busy} onClick={()=>saveRoomName(r)}>이름 저장</button><label className="field room-name-edit"><span className="tiny">팀 수</span><select value={roomTeamCountInputs[r.id] ?? String(r.team_count ?? 3)} disabled={busy || r.status!=='setup'} onChange={e=>setRoomTeamCountInputs(prev=>({...prev,[r.id]:e.target.value}))}>{Array.from({length:9},(_,i)=>i+2).map(n=><option key={n} value={n}>{n}개 팀</option>)}</select></label><button type="button" className="btn ghost" disabled={busy || r.status!=='setup'} onClick={()=>saveRoomTeamCount(r)}>팀 수 저장</button>{r.id===roomId ? <span className="pill">현재 선택</span> : <button type="button" className="btn ghost" disabled={busy} onClick={()=>navigateSection(r.room_type === 'balance' ? 'balance' : 'auction',r.id)}>방 열기</button>}{r.status==='finished' && <button type="button" className="btn danger" disabled={busy} onClick={()=>deleteRoom(r)}>삭제</button>}</div>)}</div> : <div className="empty">아직 생성된 경매방이 없습니다.</div>}</div></section>}{activeSection === 'ops' && isAdmin && <OperationsCenter room={room} rooms={rooms} teams={teams} players={players} history={history} profiles={profiles} onNavigate={(section, targetRoomId) => navigateSection(section, targetRoomId)} />}{activeSection === 'access' && <RoomAccess supabase={supabase} session={session} isAdmin={isAdmin} rooms={rooms} /> }{activeSection === 'dashboard' && (isAdmin ? <AdminDashboard supabase={supabase} room={room} rooms={rooms} teams={teams} players={players} allPlayers={allPlayers} profiles={profiles} history={history} activePlayers={activePlayers} onNavigate={navigateSection} /> : <PublicDashboard room={room} rooms={rooms} teams={teams} players={players} history={history} onNavigate={navigateSection} />)}}{activeSection === 'members' && isAdmin && <MemberManagement players={players} allPlayers={allPlayers} profiles={profiles} teams={teams} rooms={rooms} roomId={roomId} setRoomId={setRoomId} addDummyPlayer={addDummyPlayer} dummyPlayerName={dummyPlayerName} setDummyPlayerName={setDummyPlayerName} dummyPlayerGrade={dummyPlayerGrade} setDummyPlayerGrade={setDummyPlayerGrade} captainTeamId={captainTeamId} setCaptainTeamId={setCaptainTeamId} captainUserId={captainUserId} setCaptainUserId={setCaptainUserId} assignCaptain={assignCaptain} nicknameInputs={nicknameInputs} setNicknameInputs={setNicknameInputs} saveNickname={saveNickname} saveGrade={saveGrade} saveGlobalGrade={saveGlobalGrade} unsetCaptain={unsetCaptain} setPlayerWithdrawal={setPlayerWithdrawal} busy={busy} room={room} />}{activeSection === 'account' && <AccountSettings supabase={supabase} session={session} profile={profile} onSaved={async () => { await loadAll(); }} />}{activeSection === 'profiles' && <PlayerProfiles supabase={supabase} roomId={roomId} room={room} players={players} teams={teams} history={history} isAdmin={isAdmin} session={session} onRefresh={loadAll} />}{activeSection === 'tournament' && <AdminRecords supabase={supabase} roomId={roomId} room={room} session={session} mode="tournament" readOnly={!isAdmin} />}{activeSection === 'bracket' && <TournamentBracket supabase={supabase} roomId={roomId} room={room} isAdmin={isAdmin} />}{activeSection === 'announcements' && <AdminRecords supabase={supabase} roomId={roomId} room={room} session={session} mode="events" readOnly={!isAdmin} />}{activeSection === 'tools' && isAdmin && <RoomTools supabase={supabase} roomId={roomId} room={room} isAdmin={isAdmin} />}{activeSection === 'events' && <SpectatorEvents supabase={supabase} roomId={roomId} teams={teams} players={players} session={session} profile={profile} isAdmin={isAdmin} onRefresh={loadAll} />}
-    {activeSection === 'balance' && <TeamBalance supabase={supabase} roomId={roomId} room={room} teams={teams} players={players} history={history} isAdmin={isAdmin} onRefresh={loadAll} />}
+    {activeSection === 'balance' && roomAccess !== true && <section className="panel access-required-panel"><h3>{roomAccess === null ? '방 접근 권한 확인 중' : '이 방은 승인이 필요합니다'}</h3><p className="muted">참여 신청 후 관리자의 승인을 받으면 점수 팀배정 정보를 확인할 수 있습니다.</p>{roomAccess === false && <button type="button" className="btn primary" onClick={() => navigateSection('access')}>방 참여 신청하기</button>}</section>}
+    {activeSection === 'balance' && roomAccess === true && <TeamBalance supabase={supabase} roomId={roomId} room={room} teams={teams} players={players} history={history} isAdmin={isAdmin} onRefresh={loadAll} />}
     {error && <div className="alert"><CircleAlert size={17}/>{error}</div>}{notice && <div className="success">{notice}</div>}
-    {activeSection === 'auction' && <>
+    {activeSection === 'auction' && roomAccess !== true && <section className="panel access-required-panel"><h3>{roomAccess === null ? '방 접근 권한 확인 중' : '이 방은 승인이 필요합니다'}</h3><p className="muted">참여 신청 후 관리자의 승인을 받으면 경매와 선수 정보를 확인할 수 있습니다.</p>{roomAccess === false && <button type="button" className="btn primary" onClick={() => navigateSection('access')}>방 참여 신청하기</button>}</section>}
+    {activeSection === 'auction' && roomAccess === true && <>
     <section className="auction-progress-panel">
       <div className="panelhead"><div><h3>경매 진행 현황</h3><p className="tiny">선수별 진행 상태와 전체 처리율</p></div><span className="pill">{room?.status === 'running' ? 'LIVE' : room?.status === 'paused' ? 'PAUSED' : room?.status === 'finished' ? 'FINISHED' : 'READY'}</span></div>
       <div className="auction-progress-metrics">
