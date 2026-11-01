@@ -888,3 +888,45 @@ table { border-collapse: separate; border-spacing: 0; }
 .room-access-admin-summary strong{color:#f4f5ff}
 .room-access-admin-list{display:grid}
 @media(max-width:620px){.room-access-selected,.room-access-request-row,.room-access-admin-row{align-items:stretch;flex-direction:column}.room-access-admin-row .btn{width:100%}.room-access-admin-summary{align-items:flex-start;flex-direction:column}}
+
+
+/* Final mobile layout safeguards for compact phone widths. */
+@media (max-width: 650px) {
+  header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .head-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 7px;
+  }
+  .head-actions > .pill {
+    max-width: calc(100% - 125px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .head-actions .room-picker {
+    order: 10;
+    width: 100%;
+  }
+  .head-actions .room-picker select {
+    width: 100%;
+    min-width: 0;
+  }
+  .hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .hero .status { align-self: flex-start; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .columns { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 380px) {
+  .head-actions { gap: 6px; }
+  .head-actions .btn { padding: 8px 9px; font-size: 11px; }
+  .stats { gap: 8px; }
+  .stat { padding: 13px; }
+}
