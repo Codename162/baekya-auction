@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { BadgeCheck, Clock, LockKeyhole, RefreshCw, ShieldCheck, Users } from 'lucide-react';
 
-const partNames = { part1: '참여 신청', part2: '참여 신청', both: '참여 신청' };
+const partNames = { part1: '1부', part2: '2부', both: '1·2부' };
 const statusNames = { pending: '승인 대기', approved: '승인 완료', rejected: '반려' };
 
 export default function RoomAccess({ supabase, session, isAdmin, rooms, onRefreshRooms }) {
-  const part = 'both';
-  const [mine, setMine] = useState(null);
+  const [mine, setMine] = useState({});
   const [requests, setRequests] = useState([]);
   const [parts, setParts] = useState({});
   const [busy, setBusy] = useState(false);
@@ -17,9 +16,10 @@ export default function RoomAccess({ supabase, session, isAdmin, rooms, onRefres
     if (!session?.user?.id) return;
     setBusy(true); setError('');
     try {
-      const own = await supabase.from('room_access_requests').select('*').eq('user_id', session.user.id).maybeSingle();
+      const own = await supabase.from('room_access_requests').select('*')
+        .eq('user_id', session.user.id).in('requested_part', ['part1', 'part2']);
       if (own.error) throw own.error;
-      setMine(own.data || null);
+      setMine(Object.fromEntries((own.data || []).map(x => [x.requested_part, x])));
       if (isAdmin) {
         const all = await supabase.from('room_access_requests').select('*').order('submitted_at', { ascending: false });
         if (all.error) throw all.error;
@@ -37,14 +37,13 @@ export default function RoomAccess({ supabase, session, isAdmin, rooms, onRefres
   }
   useEffect(() => { load(); }, [session?.user?.id, isAdmin, rooms?.length]);
 
-  // Keep the member-facing approval status current while the page is open.
   useEffect(() => {
     if (!session?.user?.id || !supabase || isAdmin) return;
     let cancelled = false;
     const refreshOwnStatus = async () => {
-      const { data, error } = await supabase.from('room_access_requests')
-        .select('*').eq('user_id', session.user.id).maybeSingle();
-      if (!cancelled && !error) setMine(data || null);
+      const { data, error } = await supabase.from('room_access_requests').select('*')
+        .eq('user_id', session.user.id).in('requested_part', ['part1', 'part2']);
+      if (!cancelled && !error) setMine(Object.fromEntries((data || []).map(x => [x.requested_part, x])));
     };
     const timer = window.setInterval(refreshOwnStatus, 5000);
     window.addEventListener('focus', refreshOwnStatus);
@@ -68,22 +67,24 @@ export default function RoomAccess({ supabase, session, isAdmin, rooms, onRefres
   }
 
   return <section className="panel access-panel">
-    <div className="panelhead"><div><h3><LockKeyhole size={18} style={{verticalAlign:'-3px',marginRight:8}}/>참여 신청</h3><p className="tiny">참여 신청 후 관리자 승인 시 경매방과 점수 팀배정방을 이용할 수 있습니다.</p></div><button className="btn ghost" onClick={load} disabled={busy}><RefreshCw size={15}/></button></div>
+    <div className="panelhead"><div><h3><LockKeyhole size={18} style={{verticalAlign:'-3px',marginRight:8}}/>참여 신청</h3><p className="tiny">1부와 2부는 각각 별도로 신청하고 승인받을 수 있습니다.</p></div><button className="btn ghost" onClick={load} disabled={busy}><RefreshCw size={15}/></button></div>
     {error && <div className="alert">{error}</div>}{notice && <div className="success">{notice}</div>}
     {!isAdmin && <div className="access-application">
-      {mine?.status === 'approved' ? <>
-        <div className="access-status access-approved-notice" role="status" aria-live="polite">
-          <span className="access-status-icon"><BadgeCheck size={22}/></span>
-          <div><strong>참여 승인 완료</strong><p>관리자가 참여 신청을 승인했습니다. 이제 경매방과 점수 팀배정방을 이용할 수 있습니다.</p></div>
-        </div>
-        <p className="access-current">신청 상태: <span className="access-state approved">승인 완료 ✓</span></p>
-      </> : <>
-        <div className="access-status"><span className="access-status-icon"><Users size={20}/></span><div><strong>참여 신청</strong><p className="tiny">참여 신청 후 관리자의 승인을 받으면 이용할 수 있습니다.</p></div></div>
-        {mine && <p className="access-current">신청 상태: <span className={'access-state '+mine.status}>{statusNames[mine.status] || mine.status}</span></p>}
-        <form className="access-form" onSubmit={e=>{e.preventDefault();runRpc('submit_room_access_request',{p_requested_part:part},'참여 신청을 제출했습니다.')}}>
-          <button className="btn primary" type="submit" disabled={busy}><ShieldCheck size={16}/>{mine?.status==='pending'?'신청 상태 확인':mine?.status==='rejected'?'다시 신청하기':'참여 신청'}</button>
-        </form>
-      </>}
+      {['part1', 'part2'].map(part => {
+        const request = mine[part];
+        const approved = request?.status === 'approved';
+        return <article className="access-status" key={part}>
+          <span className="access-status-icon">{approved ? <BadgeCheck size={22}/> : <Users size={20}/>}</span>
+          <div className="grow">
+            <strong>{partNames[part]} 참여</strong>
+            <p className="tiny">{approved ? '참여 승인이 완료되어 해당 부의 방을 이용할 수 있습니다.' : request ? '신청 상태: ' + (statusNames[request.status] || request.status) : '아직 신청하지 않았습니다.'}</p>
+            <button className={approved ? 'btn ghost' : 'btn primary'} type="button" disabled={busy || approved}
+              onClick={() => runRpc('submit_room_access_request', { p_requested_part: part }, partNames[part] + ' 참여 신청을 제출했습니다.')}>
+              <ShieldCheck size={16}/>{approved ? '승인 완료' : request?.status === 'pending' ? '재신청하기' : request?.status === 'rejected' ? '다시 신청하기' : partNames[part] + ' 신청하기'}
+            </button>
+          </div>
+        </article>;
+      })}
     </div>}
     {isAdmin && <>
       <div className="access-admin-summary"><span><Users size={16}/> 신청 {requests.length}건</span><span><Clock size={16}/> 대기 {requests.filter(r=>r.status==='pending').length}건</span><span><BadgeCheck size={16}/> 부 구분된 방 {(rooms||[]).filter(r=>r.event_part).length}개</span></div>
@@ -92,7 +93,7 @@ export default function RoomAccess({ supabase, session, isAdmin, rooms, onRefres
         <div className="access-request-info"><strong>{req.discord_username || req.user_id}</strong><small>{partNames[req.requested_part] || req.requested_part} · {statusNames[req.status] || req.status}</small><small>{req.submitted_at ? new Date(req.submitted_at).toLocaleString('ko-KR') : ''}</small></div>
         {req.status==='pending' && <div className="access-request-actions"><button className="btn primary" disabled={busy} onClick={()=>runRpc('review_room_access_request',{p_request_id:req.id,p_status:'approved'},'신청을 승인했습니다.')}>승인</button><button className="btn ghost" disabled={busy} onClick={()=>runRpc('review_room_access_request',{p_request_id:req.id,p_status:'rejected'},'신청을 반려했습니다.')}>반려</button></div>}
       </article>)}</div>}
-      <h4 className="access-subtitle">방별 참여 부 지정</h4><p className="tiny">1부·2부 경매방과 점수 팀배정방을 각각 지정해 주세요. 방 이름은 모두에게 표시되지만, 참여 부가 지정되지 않은 방은 관리자 외 이용할 수 없습니다.</p>
+      <h4 className="access-subtitle">방별 참여 부 지정</h4><p className="tiny">1부·2부 경매방과 점수 팀배정방을 각각 지정해 주세요. 참여 부가 지정되지 않은 방은 관리자 외 이용할 수 없습니다.</p>
       <div className="access-room-list">{(rooms||[]).map(room=><div className="access-room-row" key={room.id}>
         <div><strong>{room.name}</strong><small>{room.room_type==='balance'?'점수 팀배정방':'경매방'} · {room.status==='finished'?'종료':room.status==='running'?'진행 중':room.status==='paused'?'일시정지':'준비'}</small></div>
         <select aria-label={room.name+' 참여 부'} value={parts[room.id] ?? room.event_part ?? ''} onChange={e=>setParts(prev=>({...prev,[room.id]:e.target.value}))}><option value="">미지정(기존 접근)</option><option value="part1">1부</option><option value="part2">2부</option></select>
