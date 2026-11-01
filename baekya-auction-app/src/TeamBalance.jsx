@@ -11,24 +11,25 @@ export default function TeamBalance({ supabase, roomId, room, teams, players, hi
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    setScores(Object.fromEntries(players.map(p => [p.id, Number(p.skill_score ?? gradeDefault[p.grade] ?? 50)])));
+    setScores(Object.fromEntries(players.filter(p => p.status !== 'withdrawn').map(p => [p.id, Number(p.skill_score ?? gradeDefault[p.grade] ?? 50)])));
   }, [players]);
 
+  const activePlayers = players.filter(p => p.status !== 'withdrawn');
   const teamStats = useMemo(() => teams.map(team => {
-    const roster = players.filter(p => p.team_id === team.id || p.captain_team_id === team.id);
+    const roster = activePlayers.filter(p => p.team_id === team.id || p.captain_team_id === team.id);
     return { ...team, roster, total: roster.reduce((sum, p) => sum + Number(scores[p.id] ?? p.skill_score ?? gradeDefault[p.grade] ?? 50), 0) };
-  }), [teams, players, scores]);
+  }), [teams, activePlayers, scores]);
 
-  const hasAuction = history.length > 0 || players.some(p => !p.is_captain && p.status !== 'available');
+  const hasAuction = history.length > 0 || activePlayers.some(p => !p.is_captain && p.status !== 'available');
   const canBalance = isAdmin && room?.status === 'setup' && !hasAuction && teams.length >= 2;
-  const sortedPlayers = useMemo(() => [...players].sort((a,b) => Number(scores[b.id] ?? 0) - Number(scores[a.id] ?? 0) || a.name.localeCompare(b.name, 'ko')), [players, scores]);
+  const sortedPlayers = useMemo(() => [...activePlayers].sort((a,b) => Number(scores[b.id] ?? 0) - Number(scores[a.id] ?? 0) || a.name.localeCompare(b.name, 'ko')), [players, scores]);
 
   async function saveScores() {
-    for (const p of players) {
+    for (const p of players.filter(p => p.status !== 'withdrawn')) {
       const score = Number(scores[p.id]);
       if (!Number.isInteger(score) || score < 0 || score > 100) throw new Error(p.name + ' 점수는 0~100 사이의 정수여야 합니다.');
     }
-    const results = await Promise.all(players.map(p => supabase.from('players').update({ skill_score: Number(scores[p.id]) }).eq('id', p.id).eq('room_id', roomId)));
+    const results = await Promise.all(players.filter(p => p.status !== 'withdrawn').map(p => supabase.from('players').update({ skill_score: Number(scores[p.id]) }).eq('id', p.id).eq('room_id', roomId)));
     const failed = results.find(r => r.error);
     if (failed?.error) throw failed.error;
   }
@@ -75,13 +76,13 @@ export default function TeamBalance({ supabase, roomId, room, teams, players, hi
       {(room?.status !== 'setup' || hasAuction) && <div className="balance-warning">점수 배정은 경매 시작 전 준비 상태에서만 사용할 수 있어. 경매 기록이 있는 방은 기존 배정 보호를 위해 잠겨 있어.</div>}
       <div className="balance-content">
         <div className="balance-score-list">
-          <div className="balance-subhead"><strong>선수별 점수</strong><span className="tiny">{players.length}명 · 점수 직접 입력</span></div>
-          {!players.length ? <div className="empty">먼저 관리자 설정에서 선수를 등록해 주세요.</div> : sortedPlayers.map(p => <div className="balance-player" key={p.id}>
+          <div className="balance-subhead"><strong>선수별 점수</strong><span className="tiny">{activePlayers.length}명 · 점수 직접 입력</span></div>
+          {!activePlayers.length ? <div className="empty">먼저 관리자 설정에서 선수를 등록해 주세요.</div> : sortedPlayers.map(p => <div className="balance-player" key={p.id}>
             <span className={'grade ' + (p.is_captain ? 'TL' : p.grade)}>{p.is_captain ? 'TL' : p.grade}</span>
             <div className="grow"><strong>{p.name}{p.is_captain ? ' · 팀장' : ''}</strong><small>{p.is_captain ? '팀장 고정 배정' : '점수가 높을수록 팀 합계 계산에 더 크게 반영'}</small></div>
             <label className="score-input"><span className="sr-only">{p.name} 점수</span><input aria-label={p.name + ' 점수'} type="number" min="0" max="100" step="1" value={scores[p.id] ?? 50} disabled={busy} onChange={e=>setScores(v=>({...v,[p.id]:e.target.value}))}/><small>점</small></label>
           </div>)}
-          <div className="balance-buttons"><button className="btn ghost" type="button" disabled={busy || !players.length} onClick={handleSave}><Save size={15}/>{busy ? '처리 중…' : '점수 저장'}</button><button className="btn primary" type="button" disabled={busy || !canBalance || !players.length} onClick={handleBalance}><WandSparkles size={15}/>점수 균형 팀 자동 배정</button></div>
+          <div className="balance-buttons"><button className="btn ghost" type="button" disabled={busy || !activePlayers.length} onClick={handleSave}><Save size={15}/>{busy ? '처리 중…' : '점수 저장'}</button><button className="btn primary" type="button" disabled={busy || !canBalance || !players.length} onClick={handleBalance}><WandSparkles size={15}/>점수 균형 팀 자동 배정</button></div>
         </div>
         <div className="balance-team-list">
           <div className="balance-subhead"><strong>현재 팀별 합계</strong><button className="btn ghost balance-refresh" type="button" disabled={busy} onClick={onRefresh}><RefreshCw size={13}/>새로고침</button></div>
