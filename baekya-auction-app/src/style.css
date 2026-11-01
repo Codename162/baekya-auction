@@ -895,3 +895,28 @@ table { border-collapse: separate; border-spacing: 0; }
  .admin-room-overview-row .btn{margin-left:auto}
  .division-overview-numbers strong{font-size:18px}
 }
+
+
+/* Room-specific participation approval */
+.room-access-page{display:grid;gap:16px}
+.room-access-intro .field{max-width:520px;margin:18px 0}
+.room-access-selected{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;margin:14px 0;border:1px solid var(--border);border-radius:12px;background:#0f1528}
+.room-access-selected strong,.room-access-selected small{display:block}
+.room-access-selected small{margin-top:5px;color:var(--muted);font-size:11px}
+.room-access-status{display:inline-flex;align-items:center;white-space:nowrap;padding:6px 10px;border:1px solid var(--border);border-radius:999px;font-size:11px;font-weight:750}
+.room-access-status.pending{color:#ffdb91;border-color:#ffdb9140;background:#ffdb9110}
+.room-access-status.approved{color:#9af0ca;border-color:#9af0ca40;background:#9af0ca10}
+.room-access-status.rejected{color:#ffadc4;border-color:#ffadc440;background:#ffadc410}
+.room-access-status.none{color:var(--muted)}
+.room-access-history{margin-top:22px}
+.room-access-history h4{font-size:13px;margin:0 0 10px}
+.room-access-request-row,.room-access-admin-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.room-access-request-row:last-child,.room-access-admin-row:last-child{border-bottom:0}
+.room-access-request-row .grow,.room-access-admin-row .grow{min-width:0;flex:1}
+.room-access-request-row strong,.room-access-request-row small,.room-access-admin-row strong,.room-access-admin-row small{display:block}
+.room-access-request-row small,.room-access-admin-row small{margin-top:4px;color:var(--muted);font-size:11px}
+.room-access-admin-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0}
+.room-access-admin-summary span{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
+.room-access-admin-summary strong{color:#f4f5ff}
+.room-access-admin-list{display:grid}
+@media(max-width:620px){.room-access-selected,.room-access-request-row,.room-access-admin-row{align-items:stretch;flex-direction:column}.room-access-admin-row .btn{width:100%}.room-access-admin-summary{align-items:flex-start;flex-direction:column}}
